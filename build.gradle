@@ -1,0 +1,40 @@
+plugins {
+    id 'java'
+    id 'io.quarkus'
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    implementation 'io.quarkus:quarkus-vertx'
+    implementation 'io.quarkus:quarkus-messaging'
+    implementation 'io.quarkiverse.reactivemessaging.http:quarkus-reactive-messaging-http:2.4.1'
+    implementation 'io.quarkus:quarkus-arc'
+
+    testImplementation 'io.quarkus:quarkus-junit5'
+    testImplementation 'org.awaitility:awaitility:4.3.0'
+}
+
+group 'com.github.deepend0'
+version '1.0.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+test {
+    systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
+}
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-parameters'
+}
+
+compileTestJava {
+    options.encoding = 'UTF-8'
+}

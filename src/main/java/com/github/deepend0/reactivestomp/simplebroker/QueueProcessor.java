@@ -35,6 +35,10 @@ public class QueueProcessor implements Runnable {
         topicSubscriptions.remove(topicSubscription);
     }
 
+    public void removeAllTopicSubscriptions(Subscriber subscriber) {
+        topicSubscriptions.removeIf(topicSubscription -> topicSubscription.getSubscriber().equals(subscriber));
+    }
+
     @Override
     public void run() {
         Arrays.stream(queueWorkers).forEach(

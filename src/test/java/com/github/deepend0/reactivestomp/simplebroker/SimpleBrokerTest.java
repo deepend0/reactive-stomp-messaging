@@ -13,13 +13,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class SimpleBrokerTest {
 
-    private final QueueRegistry queueRegistry = new QueueRegistry();
-    private final QueueProcessor queueProcessor = new QueueProcessor(queueRegistry);
     private SimpleBroker simpleBroker;
 
     @BeforeEach
     public void init() {
-        simpleBroker = new SimpleBroker(queueRegistry, queueProcessor);
+        simpleBroker = SimpleBroker.build();
         simpleBroker.run();
     }
 
@@ -126,6 +124,28 @@ public class SimpleBrokerTest {
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(()->messages1.equals(receivedMessages1));
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(()->messages2.equals(receivedMessages2));
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(()->messages3.equals(receivedMessages3));
+        simpleBroker.stop();
+    }
+
+    @Test
+    public void shouldUnsubscribeAllTopics() {
+        List<String> messages1 = Lists.newArrayList("message1", "message2", "message3");
+        List<String> messages2 = Lists.newArrayList("message4", "message5", "message6");
+        List<String> messages3 = Lists.newArrayList("message7", "message8", "message9");
+        List<String> receivedMessages1 = new ArrayList<>();
+        List<String> receivedMessages2 = new ArrayList<>();
+        List<String> receivedMessages3 = new ArrayList<>();
+        Subscriber subscriber = new Subscriber("subscriber1");
+        simpleBroker.subscribe(subscriber, "topic1").subscribe().with(m->receivedMessages1.add((String)m));
+        simpleBroker.subscribe(subscriber, "topic2").subscribe().with(m->receivedMessages2.add((String)m));
+        simpleBroker.subscribe(subscriber, "topic3").subscribe().with(m->receivedMessages3.add((String)m));
+        simpleBroker.unsubscribeAll(subscriber);
+        messages1.forEach(m->simpleBroker.send("topic1", m));
+        messages2.forEach(m->simpleBroker.send("topic2", m));
+        messages3.forEach(m->simpleBroker.send("topic3", m));
+        Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(receivedMessages1::isEmpty);
+        Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(receivedMessages2::isEmpty);
+        Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(receivedMessages3::isEmpty);
         simpleBroker.stop();
     }
 }

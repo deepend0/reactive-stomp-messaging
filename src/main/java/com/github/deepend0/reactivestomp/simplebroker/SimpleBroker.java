@@ -3,14 +3,10 @@ package com.github.deepend0.reactivestomp.simplebroker;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 public class SimpleBroker implements MessageBroker {
 
     private final QueueRegistry queueRegistry;
     private final QueueProcessor queueProcessor;
-    private final Map<String, Multi<Object>> multiMap = new ConcurrentHashMap<>();
 
     public SimpleBroker(QueueRegistry queueRegistry, QueueProcessor queueProcessor) {
         this.queueRegistry = queueRegistry;
@@ -24,13 +20,12 @@ public class SimpleBroker implements MessageBroker {
     }
 
     @Override
-    public Multi<Object> subscribe(Subscriber subscriber, String topic) {
+    public Multi<?> subscribe(Subscriber subscriber, String topic) {
         var topicQueue = queueRegistry.getQueue(topic);
         topicQueue.addSubscriber(subscriber);
         TopicSubscription topicSubscription = new TopicSubscription(topic, subscriber);
         queueProcessor.addTopicSubscription(topicSubscription);
         var multi = Multi.createFrom().emitter(multiEmitter -> topicSubscription.setEmitter(multiEmitter));
-        multiMap.put(topic, multi);
         return multi;
     }
 
@@ -40,7 +35,12 @@ public class SimpleBroker implements MessageBroker {
         topicQueue.removeSubscriber(subscriber);
         TopicSubscription topicSubscription = new TopicSubscription(topic, subscriber);
         queueProcessor.removeTopicSubscription(topicSubscription);
-        multiMap.remove(topic);
+        return Uni.createFrom().voidItem();
+    }
+
+    @Override
+    public Uni<Void> unsubscribeAll(Subscriber subscriber) {
+        queueProcessor.removeAllTopicSubscriptions(subscriber);
         return Uni.createFrom().voidItem();
     }
 
@@ -52,5 +52,11 @@ public class SimpleBroker implements MessageBroker {
     @Override
     public void stop() {
         queueProcessor.stop();
+    }
+
+    public static SimpleBroker build() {
+        QueueRegistry queueRegistry = new QueueRegistry();
+        QueueProcessor queueProcessor = new QueueProcessor(queueRegistry);
+        return new SimpleBroker(queueRegistry, queueProcessor);
     }
 }

@@ -39,89 +39,85 @@ public class StompProcessorIncomingTest {
 
     private static final String sessionId = "session1";
 
-    private static final byte[] CONNECT_MESSAGE =
-    (
-            "CONNECT\n" +
-            "accept-version:1.2\n" +
-            "host:example.com\n" +
-            "heart-beat:500,500\n" +
-            "\n" +
-            "\u0000"
+    private static final byte[] CONNECT_MESSAGE = ("""
+            CONNECT
+            accept-version:1.2
+            host:example.com
+            heart-beat:500,500
+            
+            \u0000"""
     ).getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] CONNECTED_MESSAGE =
-            (
-            "CONNECTED\n" +
-            "server:vertx-stomp/4.5.13\n" +
-            "heart-beat:1000,1000\n" +
-            "session:session1\n" +
-            "version:1.2\n" +
-            "\n" +
-            "\u0000"
+    private static final byte[] CONNECTED_MESSAGE = ("""
+            CONNECTED
+            server:vertx-stomp/4.5.13
+            heart-beat:1000,1000
+            session:session1
+            version:1.2
+            
+            \u0000"""
     ).getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] SUBSCRIBE_FRAME =
-            (
-            "SUBSCRIBE\n" +
-            "id:sub-001\n" +
-            "destination:/topic/chat\n" +
-            "receipt:12345\n" +
-            "\n" +
-            "\u0000"
+    private static final byte[] SUBSCRIBE_FRAME = ("""
+            SUBSCRIBE
+            id:sub-001
+            destination:/topic/chat
+            receipt:12345
+            
+            \u0000"""
     ).getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] SUBSCRIBE_RECEIPT_FRAME =
-            (
-            "RECEIPT\n" +
-            "receipt-id:12345\n" +
-            "\n" +
-            "\u0000"
+    private static final byte[] SUBSCRIBE_RECEIPT_FRAME = ("""
+            RECEIPT
+            receipt-id:12345
+            
+            \u0000"""
     ).getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] UNSUBSCRIBE_FRAME = (
-            "UNSUBSCRIBE\n" +
-            "id:sub-001\n" +
-            "receipt:54321\n" +
-            "\n" +
-            "\u0000"
+    private static final byte[] UNSUBSCRIBE_FRAME = ("""
+            UNSUBSCRIBE
+            id:sub-001
+            receipt:54321
+            
+            \u0000"""
     ).getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] UNSUBSCRIBE_RECEIPT_FRAME = (
-            "RECEIPT\n" +
-            "receipt-id:54321\n" +
-            "\n" +
-            "\u0000"
+    private static final byte[] UNSUBSCRIBE_RECEIPT_FRAME = ("""
+            RECEIPT
+            receipt-id:54321
+            
+            \u0000"""
     ).getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] SEND_FRAME = (
-            "SEND\n" +
-            "destination:/queue/messages\n" +
-            "content-type:text/plain\n" +
-            "receipt:12346\n" +
-            "\n" +
-            "Hello, this is a dummy message!\n" +
-            "\u0000"
+    private static final byte[] SEND_FRAME = ("""
+            SEND
+            destination:/queue/messages
+            content-type:text/plain
+            receipt:12346
+            
+            Hello, this is a dummy message!
+            \u0000"""
     ).getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] SEND_RECEIPT_FRAME = (
-            "RECEIPT\n" +
-            "receipt-id:12346\n" +
-            "\n" +
-            "\u0000"
+    private static final byte[] SEND_RECEIPT_FRAME = ("""
+            RECEIPT
+            receipt-id:12346
+            
+            \u0000"""
     ).getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] DISCONNECT_FRAME = (
-            "DISCONNECT\n" +
-            "receipt:12347\n" +
-            "\n" +
-            "\u0000"
+    private static final byte[] DISCONNECT_FRAME = ("""
+            DISCONNECT
+            receipt:12347
+            
+            \u0000"""
     ).getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] DISCONNECT_RECEIPT_FRAME = (
-            "RECEIPT\n" +
-            "receipt-id:12347\n" +
-            "\n" +
-            "\u0000"
+    private static final byte[] DISCONNECT_RECEIPT_FRAME = ("""
+            RECEIPT
+            receipt-id:12347
+            
+            \u0000"""
     ).getBytes(StandardCharsets.UTF_8);
 
     private List<ExternalMessage> serverOutboundList = new ArrayList<>();
@@ -132,11 +128,12 @@ public class StompProcessorIncomingTest {
     @BeforeAll
     public void init() {
         serverOutboundReceiver.subscribe().with(externalMessage -> {
-            if(Arrays.equals(externalMessage.message(), "\n".getBytes(StandardCharsets.UTF_8))) {
+            if (Arrays.equals(externalMessage.message(), "\n".getBytes(StandardCharsets.UTF_8))) {
                 serverOutboundHeartbeats.add(externalMessage);
             } else {
                 serverOutboundList.add(externalMessage);
-            }});
+            }
+        });
         serverInboundStatusReceiver.subscribe().with(Consumers.nop());
         brokerInboundReceiver.subscribe().with(brokerInboundList::add);
     }

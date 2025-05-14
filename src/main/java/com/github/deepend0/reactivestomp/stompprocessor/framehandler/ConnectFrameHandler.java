@@ -1,0 +1,94 @@
+package com.github.deepend0.reactivestomp.stompprocessor.framehandler;
+
+import com.github.deepend0.reactivestomp.message.ExternalMessage;
+import com.github.deepend0.reactivestomp.stompprocessor.StompRegistry;
+import com.github.deepend0.reactivestomp.stompprocessor.StompProcessor;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.reactive.messaging.MutinyEmitter;
+import io.vertx.ext.stomp.Command;
+import io.vertx.ext.stomp.Frame;
+import io.vertx.ext.stomp.Frames;
+import io.vertx.ext.stomp.impl.FrameParser;
+import io.vertx.ext.stomp.utils.Headers;
+import io.vertx.ext.stomp.utils.Server;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+@ApplicationScoped
+public class ConnectFrameHandler extends FrameHandler {
+
+    @Inject
+    private StompRegistry stompRegistry;
+
+    public ConnectFrameHandler() {
+    }
+
+    public ConnectFrameHandler(MutinyEmitter<ExternalMessage> serverOutboundEmitter, StompRegistry stompRegistry) {
+        super(serverOutboundEmitter);
+        this.stompRegistry = stompRegistry;
+    }
+
+    private final Frame.Heartbeat serverHeartbeat = new Frame.Heartbeat(1000, 1000);
+
+    @Override
+    public Uni<Void> handle(FrameHolder frameHolder) {
+        String sessionId = frameHolder.sessionId();
+        Frame frame = frameHolder.frame();
+        // Server negotiation
+        List<String> accepted = new ArrayList<>();
+        String accept = frame.getHeader(Frame.ACCEPT_VERSION);
+        if (accept == null) {
+            accepted.add("1.0");
+        } else {
+            accepted.addAll(Arrays.asList(accept.split(FrameParser.COMMA)));
+        }
+
+        String version = negotiate(accepted);
+        if (version == null) {
+            return serverOutboundEmitter.send(new ExternalMessage(sessionId, frameToByteArray(Frames.createErrorFrame(
+                    "Incompatible versions",
+                    Headers.create(
+                            Frame.VERSION, getSupportedVersionsHeaderLine(),
+                            Frame.CONTENT_TYPE, "text/plain"),
+                    "Client protocol requirement does not mach versions supported by the server. " +
+                            "Supported protocol versions are " + getSupportedVersionsHeaderLine()))
+            ));
+        }
+        int ping = (int)  Frame.Heartbeat.computePingPeriod(
+                serverHeartbeat,
+                Frame.Heartbeat.parse(frame.getHeader(Frame.HEARTBEAT)));
+        int pong = (int) Frame.Heartbeat.computePongPeriod(
+                serverHeartbeat,
+                Frame.Heartbeat.parse(frame.getHeader(Frame.HEARTBEAT)));
+
+        Uni<Void> uniSend = serverOutboundEmitter.send(new ExternalMessage(sessionId, frameToByteArray(new Frame(Command.CONNECTED, Headers.create(
+                Frame.VERSION, version,
+                Frame.SERVER, Server.SERVER_NAME,
+                Frame.SESSION, sessionId,
+                Frame.HEARTBEAT, new Frame.Heartbeat(ping, pong).toString()), null))));
+
+        stompRegistry.handleHeartbeat(sessionId, ping, pong);
+        return uniSend;
+    }
+
+    private String getSupportedVersionsHeaderLine() {
+        StringBuilder builder = new StringBuilder();
+        StompProcessor.ACCEPTED_VERSIONS.stream().forEach(
+                v -> builder.append(builder.isEmpty() ? v : FrameParser.COMMA + v));
+        return builder.toString();
+    }
+
+    private String negotiate(List<String> accepted) {
+        List<String> supported = StompProcessor.ACCEPTED_VERSIONS;
+        for (String v : supported) {
+            if (accepted.contains(v)) {
+                return v;
+            }
+        }
+        return null;
+    }
+}

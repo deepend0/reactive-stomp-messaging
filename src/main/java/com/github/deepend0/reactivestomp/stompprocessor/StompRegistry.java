@@ -1,0 +1,141 @@
+package com.github.deepend0.reactivestomp.stompprocessor;
+
+import com.github.deepend0.reactivestomp.message.ExternalMessage;
+import com.github.deepend0.reactivestomp.simplebroker.model.BrokerMessage;
+import com.github.deepend0.reactivestomp.simplebroker.model.DisconnectMessage;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.reactive.messaging.MutinyEmitter;
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.ext.stomp.impl.FrameParser;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.reactive.messaging.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+
+@ApplicationScoped
+public class StompRegistry {
+    private static final Logger LOGGER = LoggerFactory.getLogger(StompRegistry.class);
+    private final Vertx vertx;
+
+    protected final MutinyEmitter<ExternalMessage> serverOutboundEmitter;
+
+    private final MutinyEmitter<BrokerMessage> brokerInboundEmitter;
+
+    private static final Logger LOG = LoggerFactory.getLogger(StompRegistry.class);
+    private final ConcurrentHashMap<String, Long> lastClientActivities = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Long> sessionPingTimerIds = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Long> sessionPongTimerIds = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<SessionSubscription, SessionSubscription> sessionSubscriptions = new ConcurrentHashMap<>();
+
+    public StompRegistry(Vertx vertx,
+                         @Channel("serverOutbound") MutinyEmitter<ExternalMessage> serverOutboundEmitter,
+                         @Channel("brokerInbound") MutinyEmitter<BrokerMessage> brokerInboundEmitter) {
+        this.vertx = vertx;
+        this.serverOutboundEmitter = serverOutboundEmitter;
+        this.brokerInboundEmitter = brokerInboundEmitter;
+    }
+
+    public void handleHeartbeat(String sessionId, int ping, int pong) {
+        if (ping > 0) {
+            long timerId = vertx.setPeriodic(ping, l -> {
+                serverOutboundEmitter.sendAndForget(new ExternalMessage(sessionId, Buffer.buffer(FrameParser.EOL).getBytes()));
+                LOGGER.info("Sending heartbeat.");
+            });
+            sessionPingTimerIds.put(sessionId, timerId);
+        }
+        if (pong > 0) {
+            long timerId = vertx.setPeriodic(pong, l -> {
+                long lastClientActivity = lastClientActivities.get(sessionId);
+                LOGGER.info("Last client activity : {}", lastClientActivity);
+                long delta = System.nanoTime() - lastClientActivity;
+                final long deltaInMs = TimeUnit.MILLISECONDS.convert(delta, TimeUnit.NANOSECONDS);
+                if (deltaInMs > pong * 2) {
+                    LOG.warn("Disconnecting client " + this + " - no client activity in the last " + deltaInMs + " ms");
+                    serverOutboundEmitter.sendAndForget(new ExternalMessage(sessionId, new byte['\0']));
+                    brokerInboundEmitter.sendAndForget(new DisconnectMessage(sessionId));
+                    cancelHeartbeat(sessionId);
+                }
+            });
+            sessionPongTimerIds.put(sessionId, timerId);
+        }
+    }
+
+    public void updateLastActivity(String sessionId) {
+        lastClientActivities.put(sessionId, System.nanoTime());
+    }
+
+    public void cancelHeartbeat(String sessionId) {
+        long pingTimerId = sessionPingTimerIds.get(sessionId);
+        long pongTimerId = sessionPongTimerIds.get(sessionId);
+        vertx.cancelTimer(pingTimerId);
+        vertx.cancelTimer(pongTimerId);
+        sessionPingTimerIds.remove(sessionId);
+        sessionPongTimerIds.remove(sessionId);
+    }
+
+    public void addSessionSubscription(SessionSubscription sessionSubscription) {
+        sessionSubscriptions.put(sessionSubscription, sessionSubscription);
+    }
+
+    public void  deleteSessionSubscription(SessionSubscription sessionSubscription) {
+        sessionSubscriptions.remove(sessionSubscription);
+    }
+
+    public SessionSubscription getSessionSubscription(SessionSubscription sessionSubscription) {
+        return sessionSubscriptions.get(sessionSubscription);
+    }
+
+
+    public static class SessionSubscription {
+        private String sessionId;
+        private String subscriptionId;
+        private String destination;
+
+        public SessionSubscription(String sessionId, String subscriptionId, String destination) {
+            this.sessionId = sessionId;
+            this.subscriptionId = subscriptionId;
+            this.destination = destination;
+        }
+
+        public String getSessionId() {
+            return sessionId;
+        }
+
+        public void setSessionId(String sessionId) {
+            this.sessionId = sessionId;
+        }
+
+        public String getSubscriptionId() {
+            return subscriptionId;
+        }
+
+        public void setSubscriptionId(String subscriptionId) {
+            this.subscriptionId = subscriptionId;
+        }
+
+        public String getDestination() {
+            return destination;
+        }
+
+        public void setDestination(String destination) {
+            this.destination = destination;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof SessionSubscription that)) return false;
+            return Objects.equals(sessionId, that.sessionId) && Objects.equals(subscriptionId, that.subscriptionId);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(sessionId, subscriptionId);
+        }
+    }
+}

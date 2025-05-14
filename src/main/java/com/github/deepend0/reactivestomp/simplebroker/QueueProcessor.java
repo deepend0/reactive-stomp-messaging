@@ -1,11 +1,15 @@
 package com.github.deepend0.reactivestomp.simplebroker;
 
 import io.vertx.core.impl.ConcurrentHashSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.concurrent.*;
 
 public class QueueProcessor implements Runnable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(QueueProcessor.class);
+
     public static int ROUND_ROBIN_MESSAGE_BATCH_SIZE = 10;
     public static int NUM_WORKERS = 3;
     public static int NUM_THREADS = 3;
@@ -60,7 +64,6 @@ public class QueueProcessor implements Runnable {
                 try {
                     topicSubscription = topicSubscriptionsQueue.take();
                     if(topicSubscriptions.contains(topicSubscription)) {
-                        Subscriber subscriber = topicSubscription.getSubscriber();
                         TopicQueue topicQueue = queueRegistry.getQueue(topicSubscription.getTopic());
                         for (int i = 0; i < ROUND_ROBIN_MESSAGE_BATCH_SIZE
                                 && topicSubscription.getOffset() + 1 < topicQueue.queueSize(); i++) {
@@ -73,7 +76,7 @@ public class QueueProcessor implements Runnable {
                         topicSubscription.getEmitter().complete();
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    LOGGER.error("Error while processing queue", e);
                 }
             }
         }

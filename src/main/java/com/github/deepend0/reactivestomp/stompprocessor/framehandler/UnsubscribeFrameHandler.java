@@ -36,7 +36,7 @@ public class UnsubscribeFrameHandler extends FrameHandler {
         Frame frame = frameHolder.frame();
         final String subscriptionId = frame.getHeader(Frame.ID);
 
-        StompRegistry.SessionSubscription sessionSubscription = stompRegistry.getSessionSubscription(new StompRegistry.SessionSubscription(sessionId, subscriptionId, null));
+        StompRegistry.SessionSubscription sessionSubscription = stompRegistry.getSessionSubscriptionBySubscription(sessionId, subscriptionId);
         stompRegistry.deleteSessionSubscription(sessionSubscription);
         Uni<Void> uniSend = brokerInboundEmitter.send(new UnsubscribeMessage(sessionId, sessionSubscription.getDestination()));
 

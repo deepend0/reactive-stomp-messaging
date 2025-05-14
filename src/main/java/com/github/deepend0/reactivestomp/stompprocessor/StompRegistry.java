@@ -4,6 +4,8 @@ import com.github.deepend0.reactivestomp.message.ExternalMessage;
 import com.github.deepend0.reactivestomp.simplebroker.model.BrokerMessage;
 import com.github.deepend0.reactivestomp.simplebroker.model.DisconnectMessage;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.tuples.Tuple2;
+import io.smallrye.mutiny.tuples.Tuples;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -14,6 +16,7 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +34,8 @@ public class StompRegistry {
     private final ConcurrentHashMap<String, Long> lastClientActivities = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> sessionPingTimerIds = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> sessionPongTimerIds = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<SessionSubscription, SessionSubscription> sessionSubscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Tuple2<String, String>, SessionSubscription> sessionSubscriptionsBySubscription = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Tuple2<String, String>, SessionSubscription> sessionSubscriptionsByDestination = new ConcurrentHashMap<>();
 
     public StompRegistry(Vertx vertx,
                          @Channel("serverOutbound") MutinyEmitter<ExternalMessage> serverOutboundEmitter,
@@ -80,15 +84,21 @@ public class StompRegistry {
     }
 
     public void addSessionSubscription(SessionSubscription sessionSubscription) {
-        sessionSubscriptions.put(sessionSubscription, sessionSubscription);
+        sessionSubscriptionsBySubscription.put(Tuples.tuple2(List.of(sessionSubscription.getSessionId(), sessionSubscription.getSubscriptionId())), sessionSubscription);
+        sessionSubscriptionsByDestination.put(Tuples.tuple2(List.of(sessionSubscription.getSessionId(), sessionSubscription.getDestination())), sessionSubscription);
     }
 
     public void  deleteSessionSubscription(SessionSubscription sessionSubscription) {
-        sessionSubscriptions.remove(sessionSubscription);
+        sessionSubscriptionsBySubscription.remove(Tuples.tuple2(List.of(sessionSubscription.getSessionId(), sessionSubscription.getSubscriptionId())));
+        sessionSubscriptionsByDestination.remove(Tuples.tuple2(List.of(sessionSubscription.getSessionId(), sessionSubscription.getDestination())));
     }
 
-    public SessionSubscription getSessionSubscription(SessionSubscription sessionSubscription) {
-        return sessionSubscriptions.get(sessionSubscription);
+    public SessionSubscription getSessionSubscriptionBySubscription(String sessionId, String subscriptionId) {
+        return sessionSubscriptionsBySubscription.get(Tuples.tuple2(List.of(sessionId, subscriptionId)));
+    }
+
+    public SessionSubscription getSessionSubscriptionByDestination(String sessionId, String destination) {
+        return sessionSubscriptionsByDestination.get(Tuples.tuple2(List.of(sessionId, destination)));
     }
 
 

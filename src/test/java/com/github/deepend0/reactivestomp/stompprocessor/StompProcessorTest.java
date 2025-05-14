@@ -2,6 +2,7 @@ package com.github.deepend0.reactivestomp.stompprocessor;
 
 import com.github.deepend0.reactivestomp.message.ExternalMessage;
 import com.github.deepend0.reactivestomp.simplebroker.model.*;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.reactive.messaging.MutinyEmitter;
@@ -11,6 +12,7 @@ import org.apache.commons.lang3.function.Consumers;
 import org.awaitility.Awaitility;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.junit.jupiter.api.*;
+import org.mockito.Mockito;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -21,7 +23,7 @@ import java.util.List;
 @QuarkusTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class StompProcessorIncomingTest {
+public class StompProcessorTest {
     @Inject
     private Vertx vertx;
     @Inject
@@ -36,6 +38,16 @@ public class StompProcessorIncomingTest {
     @Inject
     @Channel("brokerInbound")
     private Multi<BrokerMessage> brokerInboundReceiver;
+    @Inject
+    @Channel("brokerOutbound")
+    private MutinyEmitter<BrokerMessage> brokerOutboundEmitter;
+    @Inject
+    @Channel("brokerOutboundStatus")
+    private Multi<Void> brokerOutboundStatusReceiver;
+    @InjectMock
+    private MessageIdGenerator messageIdGenerator;
+    @Inject
+    private StompProcessor stompProcessor;
 
     private static final String sessionId = "session1";
 
@@ -99,6 +111,15 @@ public class StompProcessorIncomingTest {
             \u0000"""
     ).getBytes(StandardCharsets.UTF_8);
 
+    private static final byte[] MESSAGE_FRAME = ("""
+           MESSAGE
+           destination:/topic/chat
+           messageId:abcde
+           subscription:sub-001
+           
+           Hello, dummy test message!\u0000"""
+    ).getBytes(StandardCharsets.UTF_8);
+
     private static final byte[] SEND_RECEIPT_FRAME = ("""
             RECEIPT
             receipt-id:12346
@@ -135,6 +156,7 @@ public class StompProcessorIncomingTest {
             }
         });
         serverInboundStatusReceiver.subscribe().with(Consumers.nop());
+        brokerOutboundStatusReceiver.subscribe().with(Consumers.nop());
         brokerInboundReceiver.subscribe().with(brokerInboundList::add);
     }
 
@@ -175,7 +197,7 @@ public class StompProcessorIncomingTest {
 
     @Test
     @Order(3)
-    public void shouldSendWithReceiptAndBrokerMessage() {
+    public void shouldSendMessageToBrokerWithReceipt() {
         ExternalMessage externalMessage = new ExternalMessage(sessionId, SEND_FRAME);
         serverInboundEmitter.sendAndForget(externalMessage);
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !serverOutboundList.isEmpty());
@@ -192,6 +214,18 @@ public class StompProcessorIncomingTest {
 
     @Test
     @Order(4)
+    public void shouldSendMessageFromBroker() {
+        Mockito.when(messageIdGenerator.generate()).thenReturn("abcde");
+        SendMessage sendMessage = new SendMessage(sessionId, "/topic/chat", "Hello, dummy test message!".getBytes(StandardCharsets.UTF_8));
+        brokerOutboundEmitter.sendAndForget(sendMessage);
+        Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !serverOutboundList.isEmpty());
+        ExternalMessage first = serverOutboundList.getFirst();
+        Assertions.assertEquals(sessionId, first.sessionId());
+        Assertions.assertArrayEquals(MESSAGE_FRAME, first.message());
+    }
+
+    @Test
+    @Order(5)
     public void shouldUnsubscribeWithReceiptAndBrokerSubscription() {
         ExternalMessage externalMessage = new ExternalMessage(sessionId, UNSUBSCRIBE_FRAME);
         serverInboundEmitter.sendAndForget(externalMessage);
@@ -208,7 +242,7 @@ public class StompProcessorIncomingTest {
     }
 
     @Test
-    @Order(5)
+    @Order(6)
     public void shouldDisconnectWithReceiptAndBrokerDisconnect() {
         ExternalMessage externalMessage = new ExternalMessage(sessionId, DISCONNECT_FRAME);
         serverInboundEmitter.sendAndForget(externalMessage);

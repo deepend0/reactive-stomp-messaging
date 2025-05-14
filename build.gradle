@@ -16,7 +16,7 @@ dependencies {
     implementation 'io.quarkiverse.reactivemessaging.http:quarkus-reactive-messaging-http:2.4.1'
     implementation 'io.vertx:vertx-stomp:4.5.14'
 
-    testImplementation 'io.quarkus:quarkus-junit5'
+    testImplementation 'io.quarkus:quarkus-junit5-mockito'
     testImplementation 'org.awaitility:awaitility:4.3.0'
 }
 

@@ -2,7 +2,7 @@ package com.github.deepend0.reactivestomp.stompprocessor.framehandler;
 
 import com.github.deepend0.reactivestomp.message.ExternalMessage;
 import com.github.deepend0.reactivestomp.stompprocessor.StompRegistry;
-import com.github.deepend0.reactivestomp.stompprocessor.StompProcessor;
+import com.github.deepend0.reactivestomp.stompprocessor.StompProcessorImpl;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.ext.stomp.Command;
@@ -77,13 +77,13 @@ public class ConnectFrameHandler extends FrameHandler {
 
     private String getSupportedVersionsHeaderLine() {
         StringBuilder builder = new StringBuilder();
-        StompProcessor.ACCEPTED_VERSIONS.stream().forEach(
+        StompProcessorImpl.ACCEPTED_VERSIONS.stream().forEach(
                 v -> builder.append(builder.isEmpty() ? v : FrameParser.COMMA + v));
         return builder.toString();
     }
 
     private String negotiate(List<String> accepted) {
-        List<String> supported = StompProcessor.ACCEPTED_VERSIONS;
+        List<String> supported = StompProcessorImpl.ACCEPTED_VERSIONS;
         for (String v : supported) {
             if (accepted.contains(v)) {
                 return v;

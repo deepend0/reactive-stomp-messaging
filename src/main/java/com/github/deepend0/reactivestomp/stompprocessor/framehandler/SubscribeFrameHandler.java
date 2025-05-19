@@ -1,8 +1,8 @@
 package com.github.deepend0.reactivestomp.stompprocessor.framehandler;
 
-import com.github.deepend0.reactivestomp.message.ExternalMessage;
-import com.github.deepend0.reactivestomp.simplebroker.model.BrokerMessage;
-import com.github.deepend0.reactivestomp.simplebroker.model.SubscribeMessage;
+import com.github.deepend0.reactivestomp.external.ExternalMessage;
+import com.github.deepend0.reactivestomp.simplebroker.messagehandler.BrokerMessage;
+import com.github.deepend0.reactivestomp.simplebroker.messagehandler.SubscribeMessage;
 import com.github.deepend0.reactivestomp.stompprocessor.StompRegistry;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.MutinyEmitter;

@@ -1,11 +1,10 @@
 package com.github.deepend0.reactivestomp.stompprocessor.framehandler;
 
-import com.github.deepend0.reactivestomp.message.ExternalMessage;
+import com.github.deepend0.reactivestomp.external.ExternalMessage;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.ext.stomp.Frames;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.reactive.messaging.Channel;
 
 @ApplicationScoped
 public class NackFrameHandler extends FrameHandler {

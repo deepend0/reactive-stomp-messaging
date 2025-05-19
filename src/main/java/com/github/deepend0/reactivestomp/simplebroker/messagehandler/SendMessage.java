@@ -1,4 +1,4 @@
-package com.github.deepend0.reactivestomp.simplebroker.model;
+package com.github.deepend0.reactivestomp.simplebroker.messagehandler;
 
 public class SendMessage extends BrokerMessage {
     private final String destination;

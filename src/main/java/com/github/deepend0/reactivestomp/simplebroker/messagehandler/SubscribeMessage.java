@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.github.deepend0.reactivestomp.simplebroker.model;
+package com.github.deepend0.reactivestomp.simplebroker.messagehandler;
 
 public class SubscribeMessage extends BrokerMessage {
 

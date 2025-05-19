@@ -1,6 +1,6 @@
 package com.github.deepend0.reactivestomp.stompprocessor.framehandler;
 
-import com.github.deepend0.reactivestomp.message.ExternalMessage;
+import com.github.deepend0.reactivestomp.external.ExternalMessage;
 import com.github.deepend0.reactivestomp.stompprocessor.StompRegistry;
 import com.github.deepend0.reactivestomp.stompprocessor.StompProcessorImpl;
 import io.smallrye.mutiny.Uni;

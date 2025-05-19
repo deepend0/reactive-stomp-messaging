@@ -1,15 +1,13 @@
 package com.github.deepend0.reactivestomp.stompprocessor;
 
-import com.github.deepend0.reactivestomp.message.ExternalMessage;
-import com.github.deepend0.reactivestomp.simplebroker.model.BrokerMessage;
-import com.github.deepend0.reactivestomp.simplebroker.model.DisconnectMessage;
-import io.smallrye.mutiny.Uni;
+import com.github.deepend0.reactivestomp.external.ExternalMessage;
+import com.github.deepend0.reactivestomp.simplebroker.messagehandler.BrokerMessage;
+import com.github.deepend0.reactivestomp.simplebroker.messagehandler.DisconnectMessage;
 import io.smallrye.mutiny.tuples.Tuple2;
 import io.smallrye.mutiny.tuples.Tuples;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.ext.stomp.impl.FrameParser;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.reactive.messaging.Channel;

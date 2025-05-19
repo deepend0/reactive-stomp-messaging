@@ -1,4 +1,4 @@
-package com.github.deepend0.reactivestomp.simplebroker.model;
+package com.github.deepend0.reactivestomp.simplebroker.messagehandler;
 
 public abstract class BrokerMessage {
     private final String subscriberId;

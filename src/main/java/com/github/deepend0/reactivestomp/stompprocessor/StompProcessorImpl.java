@@ -1,7 +1,7 @@
 package com.github.deepend0.reactivestomp.stompprocessor;
 
-import com.github.deepend0.reactivestomp.message.ExternalMessage;
-import com.github.deepend0.reactivestomp.simplebroker.model.SendMessage;
+import com.github.deepend0.reactivestomp.external.ExternalMessage;
+import com.github.deepend0.reactivestomp.simplebroker.messagehandler.SendMessage;
 import com.github.deepend0.reactivestomp.stompprocessor.framehandler.*;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.function.Supplier;
 
 @ApplicationScoped
 public class StompProcessorImpl implements StompProcessor {

@@ -1,7 +1,7 @@
 package com.github.deepend0.reactivestomp.stompprocessor;
 
-import com.github.deepend0.reactivestomp.message.ExternalMessage;
-import com.github.deepend0.reactivestomp.simplebroker.model.SendMessage;
+import com.github.deepend0.reactivestomp.external.ExternalMessage;
+import com.github.deepend0.reactivestomp.simplebroker.messagehandler.SendMessage;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 

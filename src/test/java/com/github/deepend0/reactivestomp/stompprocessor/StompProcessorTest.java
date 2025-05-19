@@ -4,6 +4,7 @@ import com.github.deepend0.reactivestomp.external.ExternalMessage;
 import com.github.deepend0.reactivestomp.simplebroker.messagehandler.*;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.core.Vertx;
@@ -21,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @QuarkusTest
+@TestProfile(StompProcessorTestProfile.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class StompProcessorTest {
@@ -51,95 +53,6 @@ public class StompProcessorTest {
 
     private static final String sessionId = "session1";
 
-    private static final byte[] CONNECT_MESSAGE = ("""
-            CONNECT
-            accept-version:1.2
-            host:example.com
-            heart-beat:500,500
-            
-            \u0000"""
-    ).getBytes(StandardCharsets.UTF_8);
-
-    private static final byte[] CONNECTED_MESSAGE = ("""
-            CONNECTED
-            server:vertx-stomp/4.5.13
-            heart-beat:1000,1000
-            session:session1
-            version:1.2
-            
-            \u0000"""
-    ).getBytes(StandardCharsets.UTF_8);
-
-    private static final byte[] SUBSCRIBE_FRAME = ("""
-            SUBSCRIBE
-            id:sub-001
-            destination:/topic/chat
-            receipt:12345
-            
-            \u0000"""
-    ).getBytes(StandardCharsets.UTF_8);
-
-    private static final byte[] SUBSCRIBE_RECEIPT_FRAME = ("""
-            RECEIPT
-            receipt-id:12345
-            
-            \u0000"""
-    ).getBytes(StandardCharsets.UTF_8);
-
-    private static final byte[] UNSUBSCRIBE_FRAME = ("""
-            UNSUBSCRIBE
-            id:sub-001
-            receipt:54321
-            
-            \u0000"""
-    ).getBytes(StandardCharsets.UTF_8);
-
-    private static final byte[] UNSUBSCRIBE_RECEIPT_FRAME = ("""
-            RECEIPT
-            receipt-id:54321
-            
-            \u0000"""
-    ).getBytes(StandardCharsets.UTF_8);
-
-    private static final byte[] SEND_FRAME = ("""
-            SEND
-            destination:/queue/messages
-            content-type:text/plain
-            receipt:12346
-            
-            Hello, this is a dummy message!
-            \u0000"""
-    ).getBytes(StandardCharsets.UTF_8);
-
-    private static final byte[] MESSAGE_FRAME = ("""
-           MESSAGE
-           destination:/topic/chat
-           messageId:abcde
-           subscription:sub-001
-           
-           Hello, dummy test message!\u0000"""
-    ).getBytes(StandardCharsets.UTF_8);
-
-    private static final byte[] SEND_RECEIPT_FRAME = ("""
-            RECEIPT
-            receipt-id:12346
-            
-            \u0000"""
-    ).getBytes(StandardCharsets.UTF_8);
-
-    private static final byte[] DISCONNECT_FRAME = ("""
-            DISCONNECT
-            receipt:12347
-            
-            \u0000"""
-    ).getBytes(StandardCharsets.UTF_8);
-
-    private static final byte[] DISCONNECT_RECEIPT_FRAME = ("""
-            RECEIPT
-            receipt-id:12347
-            
-            \u0000"""
-    ).getBytes(StandardCharsets.UTF_8);
 
     private List<ExternalMessage> serverOutboundList = new ArrayList<>();
     private List<ExternalMessage> serverOutboundHeartbeats = new ArrayList<>();
@@ -169,25 +82,29 @@ public class StompProcessorTest {
     @Test
     @Order(1)
     public void shouldConnectWithConnectedMessage() {
-        ExternalMessage externalMessage = new ExternalMessage(sessionId, CONNECT_MESSAGE);
+        final byte[] connectFrame = StompFrameUtils.connectFrame("www.example.com", "500,500");
+        final byte[] connectedFrame = StompFrameUtils.connectedFrame(sessionId, "1000,1000");
+        ExternalMessage externalMessage = new ExternalMessage(sessionId, connectFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         timerId = vertx.setPeriodic(1000, l -> serverInboundEmitter.sendAndForget(new ExternalMessage(sessionId, "\n".getBytes(StandardCharsets.UTF_8))));
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
-        Assertions.assertArrayEquals(CONNECTED_MESSAGE, first.message());
+        Assertions.assertArrayEquals(connectedFrame, first.message());
         Awaitility.await().atMost(Duration.ofMillis(6000)).pollInterval(Duration.ofMillis(1000)).until(() -> serverOutboundHeartbeats.size() > 2);
     }
 
     @Test
     @Order(2)
     public void shouldSubscribeWithReceiptAndBrokerSubscription() {
-        ExternalMessage externalMessage = new ExternalMessage(sessionId, SUBSCRIBE_FRAME);
+        final byte [] subscribeFrame = StompFrameUtils.subscribeFrame("sub-001", "/topic/chat", "12345");
+        final byte [] receiptFrame = StompFrameUtils.receiptFrame("12345");
+        ExternalMessage externalMessage = new ExternalMessage(sessionId, subscribeFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
-        Assertions.assertArrayEquals(SUBSCRIBE_RECEIPT_FRAME, first.message());
+        Assertions.assertArrayEquals(receiptFrame, first.message());
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !brokerInboundList.isEmpty());
         BrokerMessage brokerMessage = brokerInboundList.getFirst();
         Assertions.assertEquals(sessionId, brokerMessage.getSubscriberId());
@@ -198,12 +115,14 @@ public class StompProcessorTest {
     @Test
     @Order(3)
     public void shouldSendMessageToBrokerWithReceipt() {
-        ExternalMessage externalMessage = new ExternalMessage(sessionId, SEND_FRAME);
+        final byte [] sendFrame = StompFrameUtils.sendFrame("/queue/messages", "text/plain", "12346", "Hello, this is a dummy message!");
+        final byte [] receiptFrame = StompFrameUtils.receiptFrame("12346");
+        ExternalMessage externalMessage = new ExternalMessage(sessionId, sendFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
-        Assertions.assertArrayEquals(SEND_RECEIPT_FRAME, first.message());
+        Assertions.assertArrayEquals(receiptFrame, first.message());
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !brokerInboundList.isEmpty());
         BrokerMessage brokerMessage = brokerInboundList.getFirst();
         Assertions.assertEquals(sessionId, brokerMessage.getSubscriberId());
@@ -215,24 +134,27 @@ public class StompProcessorTest {
     @Test
     @Order(4)
     public void shouldSendMessageFromBroker() {
+        final byte [] messageFrame = StompFrameUtils.messageFrame("/topic/chat", "abcde", "sub-001", "Hello, this is a dummy message!");
         Mockito.when(messageIdGenerator.generate()).thenReturn("abcde");
-        SendMessage sendMessage = new SendMessage(sessionId, "/topic/chat", "Hello, dummy test message!".getBytes(StandardCharsets.UTF_8));
+        SendMessage sendMessage = new SendMessage(sessionId, "/topic/chat", "Hello, this is a dummy message!".getBytes(StandardCharsets.UTF_8));
         brokerOutboundEmitter.sendAndForget(sendMessage);
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
-        Assertions.assertArrayEquals(MESSAGE_FRAME, first.message());
+        Assertions.assertArrayEquals(messageFrame, first.message());
     }
 
     @Test
     @Order(5)
     public void shouldUnsubscribeWithReceiptAndBrokerSubscription() {
-        ExternalMessage externalMessage = new ExternalMessage(sessionId, UNSUBSCRIBE_FRAME);
+        final byte [] unsubscribeFrame = StompFrameUtils.unsubscribeFrame("sub-001", "54321");
+        final byte [] receiptFrame = StompFrameUtils.receiptFrame("54321");
+        ExternalMessage externalMessage = new ExternalMessage(sessionId, unsubscribeFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
-        Assertions.assertArrayEquals(UNSUBSCRIBE_RECEIPT_FRAME, first.message());
+        Assertions.assertArrayEquals(receiptFrame, first.message());
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !brokerInboundList.isEmpty());
         BrokerMessage brokerMessage = brokerInboundList.getFirst();
         Assertions.assertEquals(sessionId, brokerMessage.getSubscriberId());
@@ -244,12 +166,14 @@ public class StompProcessorTest {
     @Test
     @Order(6)
     public void shouldDisconnectWithReceiptAndBrokerDisconnect() {
-        ExternalMessage externalMessage = new ExternalMessage(sessionId, DISCONNECT_FRAME);
+        final byte [] disconnectFrame = StompFrameUtils.disconnectFrame("12347");
+        final byte [] receiptFrame = StompFrameUtils.receiptFrame("12347");
+        ExternalMessage externalMessage = new ExternalMessage(sessionId, disconnectFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
-        Assertions.assertArrayEquals(DISCONNECT_RECEIPT_FRAME, first.message());
+        Assertions.assertArrayEquals(receiptFrame, first.message());
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !brokerInboundList.isEmpty());
         BrokerMessage brokerMessage = brokerInboundList.getFirst();
         Assertions.assertEquals(sessionId, brokerMessage.getSubscriberId());

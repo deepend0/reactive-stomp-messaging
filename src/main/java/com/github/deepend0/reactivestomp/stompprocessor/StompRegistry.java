@@ -14,10 +14,10 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 @ApplicationScoped
 public class StompRegistry {
@@ -55,11 +55,10 @@ public class StompRegistry {
             long timerId = vertx.setPeriodic(pong, l -> {
                 long lastClientActivity = lastClientActivities.get(sessionId);
                 LOGGER.info("Last client activity : {}", lastClientActivity);
-                long delta = System.nanoTime() - lastClientActivity;
-                final long deltaInMs = TimeUnit.MILLISECONDS.convert(delta, TimeUnit.NANOSECONDS);
-                if (deltaInMs > pong * 2) {
-                    LOG.warn("Disconnecting client " + this + " - no client activity in the last " + deltaInMs + " ms");
-                    serverOutboundEmitter.sendAndForget(new ExternalMessage(sessionId, new byte['\0']));
+                long delta = Instant.now().toEpochMilli() - lastClientActivity;
+                if (delta > pong * 2) {
+                    LOG.warn("Disconnecting client " + this + " - no client activity in the last " + delta + " ms");
+                    serverOutboundEmitter.sendAndForget(new ExternalMessage(sessionId, new byte[]{'\0'}));
                     brokerInboundEmitter.sendAndForget(new DisconnectMessage(sessionId));
                     cancelHeartbeat(sessionId);
                 }
@@ -69,7 +68,7 @@ public class StompRegistry {
     }
 
     public void updateLastActivity(String sessionId) {
-        lastClientActivities.put(sessionId, System.nanoTime());
+        lastClientActivities.put(sessionId, Instant.now().toEpochMilli());
     }
 
     public void cancelHeartbeat(String sessionId) {

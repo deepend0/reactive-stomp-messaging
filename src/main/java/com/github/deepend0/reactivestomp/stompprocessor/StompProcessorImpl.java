@@ -2,8 +2,15 @@ package com.github.deepend0.reactivestomp.stompprocessor;
 
 import com.github.deepend0.reactivestomp.external.ExternalMessage;
 import com.github.deepend0.reactivestomp.simplebroker.messagehandler.SendMessage;
-import com.github.deepend0.reactivestomp.stompprocessor.framehandler.*;
-import io.smallrye.mutiny.Multi;
+import com.github.deepend0.reactivestomp.stompprocessor.framehandler.AckFrameHandler;
+import com.github.deepend0.reactivestomp.stompprocessor.framehandler.ConnectFrameHandler;
+import com.github.deepend0.reactivestomp.stompprocessor.framehandler.DisconnectFrameHandler;
+import com.github.deepend0.reactivestomp.stompprocessor.framehandler.FrameHandler;
+import com.github.deepend0.reactivestomp.stompprocessor.framehandler.FrameHolder;
+import com.github.deepend0.reactivestomp.stompprocessor.framehandler.NackFrameHandler;
+import com.github.deepend0.reactivestomp.stompprocessor.framehandler.SendFrameHandler;
+import com.github.deepend0.reactivestomp.stompprocessor.framehandler.SubscribeFrameHandler;
+import com.github.deepend0.reactivestomp.stompprocessor.framehandler.UnsubscribeFrameHandler;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.core.buffer.Buffer;
@@ -15,12 +22,15 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
-import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @ApplicationScoped
 public class StompProcessorImpl implements StompProcessor {
@@ -64,13 +74,14 @@ public class StompProcessorImpl implements StompProcessor {
         return new FrameParser();
     }
 
+    @Override
     @Incoming("serverInbound")
-    @Outgoing("serverInboundStatus")
-    public Multi<Void> processFromClient(ExternalMessage externalMessage) {
+    public Uni<Void> processFromClient(ExternalMessage externalMessage) {
         String sessionId = externalMessage.sessionId();
         stompRegistry.updateLastActivity(sessionId);
-        if (Arrays.equals(externalMessage.message(), "\n".getBytes(StandardCharsets.UTF_8))) {
-            return Multi.createFrom().empty();
+        if (Arrays.equals(externalMessage.message(), Buffer.buffer(FrameParser.EOL).getBytes())) {
+            LOGGER.info("Received heartbeat from client {}", sessionId);
+            return Uni.createFrom().voidItem();
         }
         List<Frame> messages = frameParserAdapter.parse(externalMessage.message());
         var unis = messages.stream().map(frame -> new FrameHolder(sessionId, frame)).map(frameHolder -> {
@@ -78,12 +89,11 @@ public class StompProcessorImpl implements StompProcessor {
             return frameHandler.handle(frameHolder);
         }).toList();
 
-        return Multi.createFrom().iterable(unis)
-                .onItem().transformToMultiAndMerge(Uni::toMulti);
+        return Uni.join().all(unis).andFailFast().replaceWithVoid();
     }
 
+    @Override
     @Incoming("brokerOutbound")
-    @Outgoing("brokerOutboundStatus")
     public Uni<Void> processToClient(SendMessage sendMessage) {
         String subscriptionId = stompRegistry.getSessionSubscriptionByDestination(sendMessage.getSubscriberId(), sendMessage.getDestination()).getSubscriptionId();
         Map<String, String> headers = new HashMap<>();

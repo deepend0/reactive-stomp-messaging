@@ -8,7 +8,6 @@ import io.smallrye.reactive.messaging.MutinyEmitter;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
-import org.eclipse.microprofile.reactive.messaging.Outgoing;
 
 @ApplicationScoped
 public class BrokerMessageHandler {
@@ -22,7 +21,6 @@ public class BrokerMessageHandler {
     }
 
     @Incoming("brokerInbound")
-    @Outgoing("brokerInboundStatus")
     public Uni<Void> handleBrokerMessage(BrokerMessage brokerMessage) {
         return switch (brokerMessage) {
             case SubscribeMessage subscribeMessage -> subscribe(subscribeMessage).toUni().replaceWithVoid();

@@ -1,18 +1,30 @@
 package com.github.deepend0.reactivestomp.stompprocessor;
 
 import com.github.deepend0.reactivestomp.external.ExternalMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.*;
+import com.github.deepend0.reactivestomp.simplebroker.messagehandler.BrokerMessage;
+import com.github.deepend0.reactivestomp.simplebroker.messagehandler.DisconnectMessage;
+import com.github.deepend0.reactivestomp.simplebroker.messagehandler.SendMessage;
+import com.github.deepend0.reactivestomp.simplebroker.messagehandler.SubscribeMessage;
+import com.github.deepend0.reactivestomp.simplebroker.messagehandler.UnsubscribeMessage;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.ext.stomp.impl.FrameParser;
 import jakarta.inject.Inject;
-import org.apache.commons.lang3.function.Consumers;
 import org.awaitility.Awaitility;
 import org.eclipse.microprofile.reactive.messaging.Channel;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.mockito.Mockito;
 
 import java.nio.charset.StandardCharsets;
@@ -32,9 +44,6 @@ public class StompProcessorTest {
     @Channel("serverInbound")
     private MutinyEmitter<ExternalMessage> serverInboundEmitter;
     @Inject
-    @Channel("serverInboundStatus")
-    private Multi<Void> serverInboundStatusReceiver;
-    @Inject
     @Channel("serverOutbound")
     private Multi<ExternalMessage> serverOutboundReceiver;
     @Inject
@@ -43,16 +52,12 @@ public class StompProcessorTest {
     @Inject
     @Channel("brokerOutbound")
     private MutinyEmitter<BrokerMessage> brokerOutboundEmitter;
-    @Inject
-    @Channel("brokerOutboundStatus")
-    private Multi<Void> brokerOutboundStatusReceiver;
     @InjectMock
     private MessageIdGenerator messageIdGenerator;
     @Inject
     private StompProcessor stompProcessor;
 
     private static final String sessionId = "session1";
-
 
     private List<ExternalMessage> serverOutboundList = new ArrayList<>();
     private List<ExternalMessage> serverOutboundHeartbeats = new ArrayList<>();
@@ -62,14 +67,12 @@ public class StompProcessorTest {
     @BeforeAll
     public void init() {
         serverOutboundReceiver.subscribe().with(externalMessage -> {
-            if (Arrays.equals(externalMessage.message(), "\n".getBytes(StandardCharsets.UTF_8))) {
+            if (Arrays.equals(externalMessage.message(), Buffer.buffer(FrameParser.EOL).getBytes())) {
                 serverOutboundHeartbeats.add(externalMessage);
             } else {
                 serverOutboundList.add(externalMessage);
             }
         });
-        serverInboundStatusReceiver.subscribe().with(Consumers.nop());
-        brokerOutboundStatusReceiver.subscribe().with(Consumers.nop());
         brokerInboundReceiver.subscribe().with(brokerInboundList::add);
     }
 

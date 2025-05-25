@@ -47,17 +47,17 @@ public class StompRegistry {
         if (ping > 0) {
             long timerId = vertx.setPeriodic(ping, l -> {
                 serverOutboundEmitter.sendAndForget(new ExternalMessage(sessionId, Buffer.buffer(FrameParser.EOL).getBytes()));
-                LOGGER.info("Sending heartbeat.");
+                LOGGER.debug("Sending server heartbeat for session {}", sessionId);
             });
             sessionPingTimerIds.put(sessionId, timerId);
         }
         if (pong > 0) {
             long timerId = vertx.setPeriodic(pong, l -> {
                 long lastClientActivity = lastClientActivities.get(sessionId);
-                LOGGER.info("Last client activity : {}", lastClientActivity);
+                LOGGER.debug("Last client activity : {} for session: {}", lastClientActivity, sessionId);
                 long delta = Instant.now().toEpochMilli() - lastClientActivity;
                 if (delta > pong * 2) {
-                    LOG.warn("Disconnecting client " + this + " - no client activity in the last " + delta + " ms");
+                    LOG.warn("Disconnecting client " + sessionId + " - no client activity in the last " + delta + " ms");
                     serverOutboundEmitter.sendAndForget(new ExternalMessage(sessionId, new byte[]{'\0'}));
                     brokerInboundEmitter.sendAndForget(new DisconnectMessage(sessionId));
                     cancelHeartbeat(sessionId);
@@ -85,7 +85,7 @@ public class StompRegistry {
         sessionSubscriptionsByDestination.put(Tuples.tuple2(List.of(sessionSubscription.getSessionId(), sessionSubscription.getDestination())), sessionSubscription);
     }
 
-    public void  deleteSessionSubscription(SessionSubscription sessionSubscription) {
+    public void deleteSessionSubscription(SessionSubscription sessionSubscription) {
         sessionSubscriptionsBySubscription.remove(Tuples.tuple2(List.of(sessionSubscription.getSessionId(), sessionSubscription.getSubscriptionId())));
         sessionSubscriptionsByDestination.remove(Tuples.tuple2(List.of(sessionSubscription.getSessionId(), sessionSubscription.getDestination())));
     }

@@ -68,8 +68,7 @@ public class StompFrameUtils {
             content-type:%s
             receipt:%s
 
-            %s
-            \u0000""";
+            %s\u0000""";
         return toBytes(String.format(frame, destination, contentType, receipt, payload));
     }
 

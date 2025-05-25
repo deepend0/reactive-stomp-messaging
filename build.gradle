@@ -12,7 +12,6 @@ dependencies {
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
     implementation 'io.quarkus:quarkus-config-yaml'
     implementation 'io.quarkus:quarkus-arc'
-    implementation 'io.quarkus:quarkus-scheduler'
     implementation 'io.quarkus:quarkus-messaging'
     implementation 'io.quarkiverse.reactivemessaging.http:quarkus-reactive-messaging-http:2.4.1'
     implementation 'io.vertx:vertx-stomp:4.5.14'

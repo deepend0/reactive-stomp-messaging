@@ -1,11 +1,7 @@
 package com.github.deepend0.reactivestomp.stompprocessor;
 
 import com.github.deepend0.reactivestomp.external.ExternalMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.BrokerMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.DisconnectMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.SendMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.SubscribeMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.UnsubscribeMessage;
+import com.github.deepend0.reactivestomp.simplebroker.messagehandler.*;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -17,14 +13,7 @@ import io.vertx.ext.stomp.impl.FrameParser;
 import jakarta.inject.Inject;
 import org.awaitility.Awaitility;
 import org.eclipse.microprofile.reactive.messaging.Channel;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
 
 import java.nio.charset.StandardCharsets;
@@ -131,7 +120,7 @@ public class StompProcessorTest {
         Assertions.assertEquals(sessionId, brokerMessage.getSubscriberId());
         Assertions.assertInstanceOf(SendMessage.class, brokerMessage);
         Assertions.assertEquals("/queue/messages", ((SendMessage) brokerMessage).getDestination());
-        Assertions.assertArrayEquals("Hello, this is a dummy message!\n".getBytes(StandardCharsets.UTF_8), ((SendMessage) brokerMessage).getPayload());
+        Assertions.assertArrayEquals("Hello, this is a dummy message!".getBytes(StandardCharsets.UTF_8), ((SendMessage) brokerMessage).getPayload());
     }
 
     @Test

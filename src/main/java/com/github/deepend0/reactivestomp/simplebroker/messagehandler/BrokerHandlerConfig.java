@@ -8,6 +8,8 @@ import jakarta.enterprise.inject.Produces;
 public class BrokerHandlerConfig {
     @Produces
     public SimpleBroker simpleBroker() {
-        return SimpleBroker.build();
+        SimpleBroker simpleBroker = SimpleBroker.build();
+        simpleBroker.run();
+        return simpleBroker;
     }
 }

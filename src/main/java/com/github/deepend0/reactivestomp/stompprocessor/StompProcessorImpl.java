@@ -2,15 +2,7 @@ package com.github.deepend0.reactivestomp.stompprocessor;
 
 import com.github.deepend0.reactivestomp.external.ExternalMessage;
 import com.github.deepend0.reactivestomp.simplebroker.messagehandler.SendMessage;
-import com.github.deepend0.reactivestomp.stompprocessor.framehandler.AckFrameHandler;
-import com.github.deepend0.reactivestomp.stompprocessor.framehandler.ConnectFrameHandler;
-import com.github.deepend0.reactivestomp.stompprocessor.framehandler.DisconnectFrameHandler;
-import com.github.deepend0.reactivestomp.stompprocessor.framehandler.FrameHandler;
-import com.github.deepend0.reactivestomp.stompprocessor.framehandler.FrameHolder;
-import com.github.deepend0.reactivestomp.stompprocessor.framehandler.NackFrameHandler;
-import com.github.deepend0.reactivestomp.stompprocessor.framehandler.SendFrameHandler;
-import com.github.deepend0.reactivestomp.stompprocessor.framehandler.SubscribeFrameHandler;
-import com.github.deepend0.reactivestomp.stompprocessor.framehandler.UnsubscribeFrameHandler;
+import com.github.deepend0.reactivestomp.stompprocessor.framehandler.*;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.core.buffer.Buffer;
@@ -25,12 +17,7 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @ApplicationScoped
 public class StompProcessorImpl implements StompProcessor {
@@ -79,8 +66,9 @@ public class StompProcessorImpl implements StompProcessor {
     public Uni<Void> processFromClient(ExternalMessage externalMessage) {
         String sessionId = externalMessage.sessionId();
         stompRegistry.updateLastActivity(sessionId);
+        LOGGER.debug("Received message from client {}", sessionId);
         if (Arrays.equals(externalMessage.message(), Buffer.buffer(FrameParser.EOL).getBytes())) {
-            LOGGER.info("Received heartbeat from client {}", sessionId);
+            LOGGER.debug("Received heartbeat from client {}", sessionId);
             return Uni.createFrom().voidItem();
         }
         List<Frame> messages = frameParserAdapter.parse(externalMessage.message());

@@ -76,16 +76,14 @@ public class StompProcessorImpl implements StompProcessor {
             if(Command.CONNECT.equals(frame.getCommand())) {
                 if (hasActiveSession) {
                     return serverOutboundEmitter.send(new ExternalMessage(sessionId, FrameUtils.frameToByteArray(Frames.createErrorFrame(
-                            "Command Error",
-                            Headers.create(
-                                    frame.getHeaders()), "Active connection already exists."))));
+                            "REJECTED",
+                            Headers.create("content-type", "text/plain"), "Active connection already exists."))));
                 }
             } else {
                 if (!hasActiveSession) {
                     return serverOutboundEmitter.send(new ExternalMessage(sessionId, FrameUtils.frameToByteArray(Frames.createErrorFrame(
-                            "Command Error",
-                            Headers.create(
-                                    frame.getHeaders()), "Active connection doesn't exist."))));
+                            "REJECTED",
+                            Headers.create("content-type", "text/plain"), "Active connection doesn't exist."))));
                 }
             }
             stompRegistry.updateLastActivity(sessionId);

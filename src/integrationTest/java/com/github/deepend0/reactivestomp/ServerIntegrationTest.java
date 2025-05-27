@@ -141,12 +141,12 @@ public class ServerIntegrationTest {
     private void disconnectClient(String sessionId, long timerId, String receipt) {
         final byte [] disconnectFrame = FrameTestUtils.disconnectFrame(receipt);
         final byte [] receiptFrame = FrameTestUtils.receiptFrame(receipt);
+        vertx.cancelTimer(timerId);
         ExternalMessage externalMessage = new ExternalMessage(sessionId, disconnectFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.removeFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(receiptFrame, first.message());
-        vertx.cancelTimer(timerId);
     }
 }

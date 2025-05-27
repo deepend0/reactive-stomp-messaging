@@ -81,15 +81,13 @@ public class StompRegistry {
         Tuple2<Long, Integer> pongTimer = sessionPongTimerIds.get(sessionId);
         vertx.cancelTimer(pingTimer.getItem1());
         vertx.cancelTimer(pongTimer.getItem2());
-        vertx.setTimer(pongTimer.getItem2() * 2, l-> {
-            sessionPingTimerIds.remove(sessionId);
-            sessionPongTimerIds.remove(sessionId);
-            lastClientActivities.remove(sessionId);
-            var sessionIdSubIdKeys = sessionSubscriptionsBySubscription.keySet().stream().filter(k -> sessionId.equals(k.getItem1())).toList();
-            sessionIdSubIdKeys.forEach(sessionSubscriptionsBySubscription::remove);
-            var sessionIdDestKeys = sessionSubscriptionsByDestination.keySet().stream().filter(k -> sessionId.equals(k.getItem1())).toList();
-            sessionIdDestKeys.forEach(sessionSubscriptionsByDestination::remove);
-        });
+        sessionPingTimerIds.remove(sessionId);
+        sessionPongTimerIds.remove(sessionId);
+        lastClientActivities.remove(sessionId);
+        var sessionIdSubIdKeys = sessionSubscriptionsBySubscription.keySet().stream().filter(k -> sessionId.equals(k.getItem1())).toList();
+        sessionIdSubIdKeys.forEach(sessionSubscriptionsBySubscription::remove);
+        var sessionIdDestKeys = sessionSubscriptionsByDestination.keySet().stream().filter(k -> sessionId.equals(k.getItem1())).toList();
+        sessionIdDestKeys.forEach(sessionSubscriptionsByDestination::remove);
     }
 
     public void addSessionSubscription(SessionSubscription sessionSubscription) {

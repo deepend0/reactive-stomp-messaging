@@ -91,4 +91,15 @@ public class FrameTestUtils {
             \u0000""";
         return toBytes(String.format(frame, receipt));
     }
+
+    public static byte[] errorFrame(String message, String contentType, String body) {
+        String frame = """
+            ERROR
+            message:%s
+            content-length:%d
+            content-type:%s
+            
+            %s\u0000""";
+        return toBytes(String.format(frame, message, body.length(), contentType, body));
+    }
 }

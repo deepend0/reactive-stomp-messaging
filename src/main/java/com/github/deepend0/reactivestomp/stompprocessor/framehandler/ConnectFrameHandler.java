@@ -49,7 +49,7 @@ public class ConnectFrameHandler extends FrameHandler {
 
         String version = negotiate(accepted);
         if (version == null) {
-            return serverOutboundEmitter.send(new ExternalMessage(sessionId, frameToByteArray(Frames.createErrorFrame(
+            return serverOutboundEmitter.send(new ExternalMessage(sessionId, FrameUtils.frameToByteArray(Frames.createErrorFrame(
                     "Incompatible versions",
                     Headers.create(
                             Frame.VERSION, getSupportedVersionsHeaderLine(),
@@ -65,7 +65,7 @@ public class ConnectFrameHandler extends FrameHandler {
                 serverHeartbeat,
                 Frame.Heartbeat.parse(frame.getHeader(Frame.HEARTBEAT)));
 
-        Uni<Void> uniSend = serverOutboundEmitter.send(new ExternalMessage(sessionId, frameToByteArray(new Frame(Command.CONNECTED, Headers.create(
+        Uni<Void> uniSend = serverOutboundEmitter.send(new ExternalMessage(sessionId, FrameUtils.frameToByteArray(new Frame(Command.CONNECTED, Headers.create(
                 Frame.VERSION, version,
                 Frame.SERVER, Server.SERVER_NAME,
                 Frame.SESSION, sessionId,

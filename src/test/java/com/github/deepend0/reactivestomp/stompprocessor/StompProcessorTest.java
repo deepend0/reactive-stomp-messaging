@@ -74,8 +74,8 @@ public class StompProcessorTest {
     @Test
     @Order(1)
     public void shouldConnectWithConnectedMessage() {
-        final byte[] connectFrame = StompFrameUtils.connectFrame("www.example.com", "500,500");
-        final byte[] connectedFrame = StompFrameUtils.connectedFrame(sessionId, "1000,1000");
+        final byte[] connectFrame = FrameTestUtils.connectFrame("www.example.com", "500,500");
+        final byte[] connectedFrame = FrameTestUtils.connectedFrame(sessionId, "1000,1000");
         ExternalMessage externalMessage = new ExternalMessage(sessionId, connectFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         timerId = vertx.setPeriodic(1000, l -> serverInboundEmitter.sendAndForget(new ExternalMessage(sessionId, "\n".getBytes(StandardCharsets.UTF_8))));
@@ -89,8 +89,8 @@ public class StompProcessorTest {
     @Test
     @Order(2)
     public void shouldSubscribeWithReceiptAndBrokerSubscription() {
-        final byte [] subscribeFrame = StompFrameUtils.subscribeFrame("sub-001", "/topic/chat", "12345");
-        final byte [] receiptFrame = StompFrameUtils.receiptFrame("12345");
+        final byte [] subscribeFrame = FrameTestUtils.subscribeFrame("sub-001", "/topic/chat", "12345");
+        final byte [] receiptFrame = FrameTestUtils.receiptFrame("12345");
         ExternalMessage externalMessage = new ExternalMessage(sessionId, subscribeFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !serverOutboundList.isEmpty());
@@ -107,8 +107,8 @@ public class StompProcessorTest {
     @Test
     @Order(3)
     public void shouldSendMessageToBrokerWithReceipt() {
-        final byte [] sendFrame = StompFrameUtils.sendFrame("/queue/messages", "text/plain", "12346", "Hello, this is a dummy message!");
-        final byte [] receiptFrame = StompFrameUtils.receiptFrame("12346");
+        final byte [] sendFrame = FrameTestUtils.sendFrame("/queue/messages", "text/plain", "12346", "Hello, this is a dummy message!");
+        final byte [] receiptFrame = FrameTestUtils.receiptFrame("12346");
         ExternalMessage externalMessage = new ExternalMessage(sessionId, sendFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !serverOutboundList.isEmpty());
@@ -126,7 +126,7 @@ public class StompProcessorTest {
     @Test
     @Order(4)
     public void shouldSendMessageFromBroker() {
-        final byte [] messageFrame = StompFrameUtils.messageFrame("/topic/chat", "abcde", "sub-001", "Hello, this is a dummy message!");
+        final byte [] messageFrame = FrameTestUtils.messageFrame("/topic/chat", "abcde", "sub-001", "Hello, this is a dummy message!");
         Mockito.when(messageIdGenerator.generate()).thenReturn("abcde");
         SendMessage sendMessage = new SendMessage(sessionId, "/topic/chat", "Hello, this is a dummy message!".getBytes(StandardCharsets.UTF_8));
         brokerOutboundEmitter.sendAndForget(sendMessage);
@@ -139,8 +139,8 @@ public class StompProcessorTest {
     @Test
     @Order(5)
     public void shouldUnsubscribeWithReceiptAndBrokerSubscription() {
-        final byte [] unsubscribeFrame = StompFrameUtils.unsubscribeFrame("sub-001", "54321");
-        final byte [] receiptFrame = StompFrameUtils.receiptFrame("54321");
+        final byte [] unsubscribeFrame = FrameTestUtils.unsubscribeFrame("sub-001", "54321");
+        final byte [] receiptFrame = FrameTestUtils.receiptFrame("54321");
         ExternalMessage externalMessage = new ExternalMessage(sessionId, unsubscribeFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !serverOutboundList.isEmpty());
@@ -158,8 +158,8 @@ public class StompProcessorTest {
     @Test
     @Order(6)
     public void shouldDisconnectWithReceiptAndBrokerDisconnect() {
-        final byte [] disconnectFrame = StompFrameUtils.disconnectFrame("12347");
-        final byte [] receiptFrame = StompFrameUtils.receiptFrame("12347");
+        final byte [] disconnectFrame = FrameTestUtils.disconnectFrame("12347");
+        final byte [] receiptFrame = FrameTestUtils.receiptFrame("12347");
         ExternalMessage externalMessage = new ExternalMessage(sessionId, disconnectFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(1000)).until(() -> !serverOutboundList.isEmpty());

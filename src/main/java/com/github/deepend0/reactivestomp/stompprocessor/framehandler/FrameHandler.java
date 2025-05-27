@@ -32,7 +32,4 @@ public abstract class FrameHandler {
         return Uni.createFrom().voidItem();
     }
 
-    public static byte [] frameToByteArray(Frame frame) {
-        return frame.toBuffer().getBytes();
-    }
 }

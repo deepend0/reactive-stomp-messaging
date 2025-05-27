@@ -33,7 +33,7 @@ public class SendFrameHandler extends FrameHandler {
         Frame frame = frameHolder.frame();
         String destination = frame.getHeader(Frame.DESTINATION);
         if (destination == null) {
-            return serverOutboundEmitter.send(new ExternalMessage(sessionId, frameToByteArray(Frames.createErrorFrame(
+            return serverOutboundEmitter.send(new ExternalMessage(sessionId, FrameUtils.frameToByteArray(Frames.createErrorFrame(
                     "Destination header missing",
                     Headers.create(frame.getHeaders()), "Invalid send frame - the " +
                             "'destination' must be set"))));
@@ -41,7 +41,7 @@ public class SendFrameHandler extends FrameHandler {
 
         String txId = frame.getHeader(Frame.TRANSACTION);
         if (txId != null) {
-            return serverOutboundEmitter.send(new ExternalMessage(sessionId, frameToByteArray(Frames.createErrorFrame(
+            return serverOutboundEmitter.send(new ExternalMessage(sessionId, FrameUtils.frameToByteArray(Frames.createErrorFrame(
                     "No transaction support",
                     Headers.create(frame.getHeaders()), "No transaction support"))));
         }

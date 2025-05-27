@@ -35,7 +35,7 @@ public class DisconnectFrameHandler extends FrameHandler {
         Frame frame = frameHolder.frame();
         Uni<Void> uniSend = brokerInboundEmitter.send(new DisconnectMessage(sessionId));
         Uni<Void> uniReceipt = handleReceipt(sessionId, frame);
-        stompRegistry.cancelHeartbeat(sessionId);
+        stompRegistry.disconnect(sessionId);
         return Uni.join().all(uniSend, uniReceipt).andFailFast().replaceWithVoid();
     }
 }

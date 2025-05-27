@@ -1,7 +1,7 @@
 package com.github.deepend0.reactivestomp;
 
 import com.github.deepend0.reactivestomp.external.ExternalMessage;
-import com.github.deepend0.reactivestomp.stompprocessor.StompFrameUtils;
+import com.github.deepend0.reactivestomp.stompprocessor.FrameTestUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.reactive.messaging.MutinyEmitter;
@@ -89,8 +89,8 @@ public class ServerIntegrationTest {
     }
 
     private long connectClient(String sessionId) {
-        final byte[] connectFrame = StompFrameUtils.connectFrame("www.example.com", "500,500");
-        final byte[] connectedFrame = StompFrameUtils.connectedFrame(sessionId, "1000,1000");
+        final byte[] connectFrame = FrameTestUtils.connectFrame("www.example.com", "500,500");
+        final byte[] connectedFrame = FrameTestUtils.connectedFrame(sessionId, "1000,1000");
         ExternalMessage externalMessage = new ExternalMessage(sessionId, connectFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         long timerId = vertx.setPeriodic(500, l ->  {
@@ -107,8 +107,8 @@ public class ServerIntegrationTest {
     }
     
     private void subscribeClient(String sessionId, String subId, String destination, String receipt) {
-        final byte [] subscribeFrame = StompFrameUtils.subscribeFrame(subId,  destination, receipt);
-        final byte [] receiptFrame = StompFrameUtils.receiptFrame(receipt);
+        final byte [] subscribeFrame = FrameTestUtils.subscribeFrame(subId,  destination, receipt);
+        final byte [] receiptFrame = FrameTestUtils.receiptFrame(receipt);
         ExternalMessage externalMessage = new ExternalMessage(sessionId, subscribeFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !serverOutboundList.isEmpty());
@@ -118,8 +118,8 @@ public class ServerIntegrationTest {
     }
 
     private void sendMessage(String sessionId, String destination, String message, String receipt) {
-        final byte [] sendFrame = StompFrameUtils.sendFrame(destination, "text/plain", receipt, message);
-        final byte [] receiptFrame = StompFrameUtils.receiptFrame(receipt);
+        final byte [] sendFrame = FrameTestUtils.sendFrame(destination, "text/plain", receipt, message);
+        final byte [] receiptFrame = FrameTestUtils.receiptFrame(receipt);
         ExternalMessage externalMessage = new ExternalMessage(sessionId, sendFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !serverOutboundList.isEmpty());
@@ -129,7 +129,7 @@ public class ServerIntegrationTest {
     }
 
     private void receiveMessage(String sessionId, String subId, String destination, String message) {
-        final byte [] messageFrame = StompFrameUtils.messageFrame(destination, ".*", subId, message);
+        final byte [] messageFrame = FrameTestUtils.messageFrame(destination, ".*", subId, message);
         Awaitility.await().atMost(Duration.ofMillis(5000)).pollInterval(Duration.ofMillis(300)).until(() -> !serverOutboundList.isEmpty()
                 && serverOutboundList.peek().sessionId().equals(sessionId));
         ExternalMessage externalMessage = serverOutboundList.removeFirst();
@@ -139,8 +139,8 @@ public class ServerIntegrationTest {
     }
 
     private void disconnectClient(String sessionId, long timerId, String receipt) {
-        final byte [] disconnectFrame = StompFrameUtils.disconnectFrame(receipt);
-        final byte [] receiptFrame = StompFrameUtils.receiptFrame(receipt);
+        final byte [] disconnectFrame = FrameTestUtils.disconnectFrame(receipt);
+        final byte [] receiptFrame = FrameTestUtils.receiptFrame(receipt);
         ExternalMessage externalMessage = new ExternalMessage(sessionId, disconnectFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !serverOutboundList.isEmpty());

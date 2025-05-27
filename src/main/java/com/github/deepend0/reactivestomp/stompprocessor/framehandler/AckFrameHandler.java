@@ -18,7 +18,7 @@ public class AckFrameHandler extends FrameHandler {
 
     @Override
     public Uni<Void> handle(FrameHolder frameHolder) {
-        return serverOutboundEmitter.send(new ExternalMessage(frameHolder.sessionId(), frameToByteArray(Frames.createErrorFrame(
+        return serverOutboundEmitter.send(new ExternalMessage(frameHolder.sessionId(), FrameUtils.frameToByteArray(Frames.createErrorFrame(
                 "Not Supported",
                 null, "Not Supported"))));
     }

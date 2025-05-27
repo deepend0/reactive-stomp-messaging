@@ -8,6 +8,7 @@ import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.stomp.Command;
 import io.vertx.ext.stomp.Frame;
+import io.vertx.ext.stomp.Frames;
 import io.vertx.ext.stomp.impl.FrameParser;
 import io.vertx.ext.stomp.utils.Headers;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -37,6 +38,7 @@ public class StompProcessorImpl implements StompProcessor {
                               @Channel("serverOutbound")
                               MutinyEmitter<ExternalMessage> serverOutboundEmitter,
                               ConnectFrameHandler connectFrameHandler,
+                              PingFrameHandler pingFrameHandler,
                               DisconnectFrameHandler disconnectFrameHandler,
                               SubscribeFrameHandler subscribeFrameHandler,
                               UnsubscribeFrameHandler unsubscribeFrameHandler,
@@ -47,6 +49,7 @@ public class StompProcessorImpl implements StompProcessor {
         this.stompRegistry = stompRegistry;
         this.messageIdGenerator = messageIdGenerator;
         commandFrameHandlerMap.put(Command.CONNECT, connectFrameHandler);
+        commandFrameHandlerMap.put(Command.PING, pingFrameHandler);
         commandFrameHandlerMap.put(Command.DISCONNECT, disconnectFrameHandler);
         commandFrameHandlerMap.put(Command.SUBSCRIBE, subscribeFrameHandler);
         commandFrameHandlerMap.put(Command.UNSUBSCRIBE, unsubscribeFrameHandler);
@@ -65,14 +68,28 @@ public class StompProcessorImpl implements StompProcessor {
     @Incoming("serverInbound")
     public Uni<Void> processFromClient(ExternalMessage externalMessage) {
         String sessionId = externalMessage.sessionId();
-        stompRegistry.updateLastActivity(sessionId);
         LOGGER.debug("Received message from client {}", sessionId);
-        if (Arrays.equals(externalMessage.message(), Buffer.buffer(FrameParser.EOL).getBytes())) {
-            LOGGER.debug("Received heartbeat from client {}", sessionId);
-            return Uni.createFrom().voidItem();
-        }
+
         List<Frame> messages = frameParserAdapter.parse(externalMessage.message());
-        var unis = messages.stream().map(frame -> new FrameHolder(sessionId, frame)).map(frameHolder -> {
+        var unis = messages.stream().map(frame -> {
+            boolean hasActiveSession = stompRegistry.hasActiveSession(sessionId);
+            if(Command.CONNECT.equals(frame.getCommand())) {
+                if (hasActiveSession) {
+                    return serverOutboundEmitter.send(new ExternalMessage(sessionId, FrameUtils.frameToByteArray(Frames.createErrorFrame(
+                            "Command Error",
+                            Headers.create(
+                                    frame.getHeaders()), "Active connection already exists."))));
+                }
+            } else {
+                if (!hasActiveSession) {
+                    return serverOutboundEmitter.send(new ExternalMessage(sessionId, FrameUtils.frameToByteArray(Frames.createErrorFrame(
+                            "Command Error",
+                            Headers.create(
+                                    frame.getHeaders()), "Active connection doesn't exist."))));
+                }
+            }
+            stompRegistry.updateLastActivity(sessionId);
+            FrameHolder frameHolder =  new FrameHolder(sessionId, frame);
             FrameHandler frameHandler = commandFrameHandlerMap.get(frameHolder.frame().getCommand());
             return frameHandler.handle(frameHolder);
         }).toList();

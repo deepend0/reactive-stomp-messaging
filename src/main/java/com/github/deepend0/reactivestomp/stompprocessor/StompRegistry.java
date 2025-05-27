@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
@@ -30,8 +31,8 @@ public class StompRegistry {
 
     private static final Logger LOG = LoggerFactory.getLogger(StompRegistry.class);
     private final ConcurrentHashMap<String, Long> lastClientActivities = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Long> sessionPingTimerIds = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Long> sessionPongTimerIds = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Tuple2<Long, Integer>> sessionPingTimerIds = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Tuple2<Long, Integer>> sessionPongTimerIds = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Tuple2<String, String>, SessionSubscription> sessionSubscriptionsBySubscription = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Tuple2<String, String>, SessionSubscription> sessionSubscriptionsByDestination = new ConcurrentHashMap<>();
 
@@ -49,7 +50,7 @@ public class StompRegistry {
                 serverOutboundEmitter.sendAndForget(new ExternalMessage(sessionId, Buffer.buffer(FrameParser.EOL).getBytes()));
                 LOGGER.debug("Sending server heartbeat for session {}", sessionId);
             });
-            sessionPingTimerIds.put(sessionId, timerId);
+            sessionPingTimerIds.put(sessionId, Tuple2.of(timerId, ping));
         }
         if (pong > 0) {
             long timerId = vertx.setPeriodic(pong, l -> {
@@ -60,24 +61,35 @@ public class StompRegistry {
                     LOG.warn("Disconnecting client " + sessionId + " - no client activity in the last " + delta + " ms");
                     serverOutboundEmitter.sendAndForget(new ExternalMessage(sessionId, new byte[]{'\0'}));
                     brokerInboundEmitter.sendAndForget(new DisconnectMessage(sessionId));
-                    cancelHeartbeat(sessionId);
+                    disconnect(sessionId);
                 }
             });
-            sessionPongTimerIds.put(sessionId, timerId);
+            sessionPongTimerIds.put(sessionId, Tuple2.of(timerId, pong));
         }
+    }
+
+    public boolean hasActiveSession(String sessionId) {
+        return lastClientActivities.containsKey(sessionId);
     }
 
     public void updateLastActivity(String sessionId) {
         lastClientActivities.put(sessionId, Instant.now().toEpochMilli());
     }
 
-    public void cancelHeartbeat(String sessionId) {
-        long pingTimerId = sessionPingTimerIds.get(sessionId);
-        long pongTimerId = sessionPongTimerIds.get(sessionId);
-        vertx.cancelTimer(pingTimerId);
-        vertx.cancelTimer(pongTimerId);
-        sessionPingTimerIds.remove(sessionId);
-        sessionPongTimerIds.remove(sessionId);
+    public void disconnect(String sessionId) {
+        Tuple2<Long, Integer> pingTimer = sessionPingTimerIds.get(sessionId);
+        Tuple2<Long, Integer> pongTimer = sessionPongTimerIds.get(sessionId);
+        vertx.cancelTimer(pingTimer.getItem1());
+        vertx.cancelTimer(pongTimer.getItem2());
+        vertx.setTimer(pongTimer.getItem2() * 2, l-> {
+            sessionPingTimerIds.remove(sessionId);
+            sessionPongTimerIds.remove(sessionId);
+            lastClientActivities.remove(sessionId);
+            var sessionIdSubIdKeys = sessionSubscriptionsBySubscription.keySet().stream().filter(k -> sessionId.equals(k.getItem1())).toList();
+            sessionIdSubIdKeys.forEach(sessionSubscriptionsBySubscription::remove);
+            var sessionIdDestKeys = sessionSubscriptionsByDestination.keySet().stream().filter(k -> sessionId.equals(k.getItem1())).toList();
+            sessionIdDestKeys.forEach(sessionSubscriptionsByDestination::remove);
+        });
     }
 
     public void addSessionSubscription(SessionSubscription sessionSubscription) {

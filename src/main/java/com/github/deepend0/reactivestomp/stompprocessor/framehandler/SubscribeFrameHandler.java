@@ -41,7 +41,7 @@ public class SubscribeFrameHandler extends FrameHandler {
         String subscriptionId = frame.getHeader(Frame.ID);
         String destination = frame.getHeader(Frame.DESTINATION);
         if (destination == null || sessionId == null) {
-            return serverOutboundEmitter.send(new ExternalMessage(sessionId, frameToByteArray(Frames.createErrorFrame(
+            return serverOutboundEmitter.send(new ExternalMessage(sessionId, FrameUtils.frameToByteArray(Frames.createErrorFrame(
                     "Invalid subscription",
                     Headers.create(
                             frame.getHeaders()), "The 'destination' and 'session' headers must be set"))));

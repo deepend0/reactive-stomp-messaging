@@ -2,7 +2,7 @@ package com.github.deepend0.reactivestomp.stompprocessor;
 
 import java.nio.charset.StandardCharsets;
 
-public class StompFrameUtils {
+public class FrameTestUtils {
 
     private static byte[] toBytes(String formattedFrame) {
         return formattedFrame.getBytes(StandardCharsets.UTF_8);

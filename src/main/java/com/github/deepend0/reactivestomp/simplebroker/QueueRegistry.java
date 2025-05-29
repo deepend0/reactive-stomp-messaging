@@ -14,4 +14,8 @@ public class QueueRegistry {
     public TopicQueue getQueue(String topic) {
         return topicQueueMap.computeIfAbsent(topic, TopicQueue::new);
     }
+
+    public void reset(){
+        topicQueueMap.clear();
+    }
 }

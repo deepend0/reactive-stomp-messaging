@@ -15,7 +15,9 @@ public class SimpleBroker implements MessageBroker {
 
     @Override
     public Uni<Void> send(String topic, Object message) {
+        //TODO Do Async
         queueRegistry.addIntoQueue(topic, message);
+        queueProcessor.updateTopicSubscriptionsQueue(topic);
         return Uni.createFrom().voidItem();
     }
 
@@ -24,6 +26,7 @@ public class SimpleBroker implements MessageBroker {
         var topicQueue = queueRegistry.getQueue(topic);
         topicQueue.addSubscriber(subscriber);
         TopicSubscription topicSubscription = new TopicSubscription(topic, subscriber);
+        topicSubscription.setOffset(topicQueue.queueSize() - 1);
         queueProcessor.addTopicSubscription(topicSubscription);
         var multi = Multi.createFrom().emitter(multiEmitter -> topicSubscription.setEmitter(multiEmitter));
         return multi;
@@ -40,7 +43,7 @@ public class SimpleBroker implements MessageBroker {
 
     @Override
     public Uni<Void> unsubscribeAll(Subscriber subscriber) {
-        queueProcessor.removeAllTopicSubscriptions(subscriber);
+        queueProcessor.removeSubscriptionsOfSubscriber(subscriber);
         return Uni.createFrom().voidItem();
     }
 
@@ -52,6 +55,12 @@ public class SimpleBroker implements MessageBroker {
     @Override
     public void stop() {
         queueProcessor.stop();
+    }
+
+    @Override
+    public void reset() {
+        queueProcessor.reset();
+        queueRegistry.reset();
     }
 
     public static SimpleBroker build() {

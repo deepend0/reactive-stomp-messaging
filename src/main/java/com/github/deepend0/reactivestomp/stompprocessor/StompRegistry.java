@@ -79,8 +79,8 @@ public class StompRegistry {
     public void disconnect(String sessionId) {
         Tuple2<Long, Integer> pingTimer = sessionPingTimerIds.get(sessionId);
         Tuple2<Long, Integer> pongTimer = sessionPongTimerIds.get(sessionId);
-        vertx.cancelTimer(pingTimer.getItem1());
-        vertx.cancelTimer(pongTimer.getItem2());
+        assert vertx.cancelTimer(pingTimer.getItem1());
+        assert vertx.cancelTimer(pongTimer.getItem1());
         sessionPingTimerIds.remove(sessionId);
         sessionPongTimerIds.remove(sessionId);
         lastClientActivities.remove(sessionId);
@@ -107,7 +107,6 @@ public class StompRegistry {
     public SessionSubscription getSessionSubscriptionByDestination(String sessionId, String destination) {
         return sessionSubscriptionsByDestination.get(Tuples.tuple2(List.of(sessionId, destination)));
     }
-
 
     public static class SessionSubscription {
         private String sessionId;

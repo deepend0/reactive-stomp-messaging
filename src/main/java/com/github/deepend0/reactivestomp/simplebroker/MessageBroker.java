@@ -13,4 +13,6 @@ public interface MessageBroker extends Runnable {
     Uni<Void> unsubscribeAll(Subscriber subscriber);
 
     void stop();
+
+    void reset();
 }

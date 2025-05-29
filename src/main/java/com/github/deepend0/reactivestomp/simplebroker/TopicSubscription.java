@@ -39,6 +39,10 @@ public class TopicSubscription {
         offset++;
     }
 
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
     public MultiEmitter<Object> getEmitter() {
         return emitter;
     }

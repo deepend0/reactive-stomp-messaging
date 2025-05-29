@@ -18,7 +18,8 @@ public class QueueProcessor implements Runnable {
     private final QueueWorker [] queueWorkers = new QueueWorker[NUM_WORKERS];
 
     private final QueueRegistry queueRegistry;
-    private final ConcurrentHashSet<TopicSubscription> topicSubscriptions = new ConcurrentHashSet<>();
+    private final ConcurrentHashMap<String, ConcurrentHashSet<TopicSubscription>> topicSubscriptionsMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ConcurrentHashSet<TopicSubscription>> subscriberSubscriptionsMap = new ConcurrentHashMap<>();
     private final BlockingDeque<TopicSubscription> topicSubscriptionsQueue = new LinkedBlockingDeque<>();
 
     public QueueProcessor(QueueRegistry queueRegistry) {
@@ -31,16 +32,34 @@ public class QueueProcessor implements Runnable {
     private boolean stop = false;
 
     public void addTopicSubscription(TopicSubscription topicSubscription) {
-        topicSubscriptions.add(topicSubscription);
+        topicSubscriptionsMap
+                .computeIfAbsent(topicSubscription.getTopic(), t->new ConcurrentHashSet<>())
+                    .add(topicSubscription);
+        subscriberSubscriptionsMap
+                .computeIfAbsent(topicSubscription.getSubscriber().getId(), t->new ConcurrentHashSet<>())
+                    .add(topicSubscription);
         topicSubscriptionsQueue.add(topicSubscription);
     }
 
     public void removeTopicSubscription(TopicSubscription topicSubscription) {
-        topicSubscriptions.remove(topicSubscription);
+        topicSubscriptionsMap.get(topicSubscription.getTopic()).remove(topicSubscription);
+        subscriberSubscriptionsMap.get(topicSubscription.getSubscriber().getId()).remove(topicSubscription);
     }
 
-    public void removeAllTopicSubscriptions(Subscriber subscriber) {
-        topicSubscriptions.removeIf(topicSubscription -> topicSubscription.getSubscriber().equals(subscriber));
+    public void removeSubscriptionsOfSubscriber(Subscriber subscriber) {
+        subscriberSubscriptionsMap.get(subscriber.getId())
+                .forEach(topicSubscription ->
+                        topicSubscriptionsMap.get(topicSubscription.getTopic())
+                                .remove(topicSubscription));
+        subscriberSubscriptionsMap.remove(subscriber.getId());
+    }
+
+    public void updateTopicSubscriptionsQueue(String topic) {
+        topicSubscriptionsMap.get(topic).forEach(topicSubscription -> {
+            if(!topicSubscriptionsQueue.contains(topicSubscription)) {
+                topicSubscriptionsQueue.add(topicSubscription);
+            }
+        });
     }
 
     @Override
@@ -54,6 +73,16 @@ public class QueueProcessor implements Runnable {
         stop = true;
     }
 
+    public void reset() {
+        if(stop) {
+            topicSubscriptionsQueue.clear();
+            topicSubscriptionsMap.clear();
+            subscriberSubscriptionsMap.clear();
+        } else {
+            throw new IllegalStateException("QueueProcessor is not stopped.");
+        }
+    }
+
     public class QueueWorker {
 
         private Future<?> future;
@@ -63,7 +92,7 @@ public class QueueProcessor implements Runnable {
                 TopicSubscription topicSubscription;
                 try {
                     topicSubscription = topicSubscriptionsQueue.take();
-                    if(topicSubscriptions.contains(topicSubscription)) {
+                    if(topicSubscriptionsMap.get(topicSubscription.getTopic()).contains(topicSubscription)) {
                         TopicQueue topicQueue = queueRegistry.getQueue(topicSubscription.getTopic());
                         for (int i = 0; i < ROUND_ROBIN_MESSAGE_BATCH_SIZE
                                 && topicSubscription.getOffset() + 1 < topicQueue.queueSize(); i++) {
@@ -71,7 +100,10 @@ public class QueueProcessor implements Runnable {
                             Object message = topicQueue.get(topicSubscription.getOffset());
                             topicSubscription.getEmitter().emit(message);
                         }
-                        topicSubscriptionsQueue.add(topicSubscription);
+                        LOGGER.info("Topic Subscription is being processed. Topic {} Subscriber {}", topicSubscription.getTopic(), topicSubscription.getSubscriber().getId());
+                        if(topicSubscription.getOffset() + 1 < topicQueue.queueSize()) {
+                            topicSubscriptionsQueue.add(topicSubscription);
+                        }
                     } else {
                         topicSubscription.getEmitter().complete();
                     }

@@ -3,6 +3,8 @@ package com.github.deepend0.reactivestomp.simplebroker;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
+import java.util.concurrent.CompletableFuture;
+
 public class SimpleBroker implements MessageBroker {
 
     private final QueueRegistry queueRegistry;
@@ -15,10 +17,11 @@ public class SimpleBroker implements MessageBroker {
 
     @Override
     public Uni<Void> send(String topic, Object message) {
-        //TODO Do Async
-        queueRegistry.addIntoQueue(topic, message);
-        queueProcessor.updateTopicSubscriptionsQueue(topic);
-        return Uni.createFrom().voidItem();
+        CompletableFuture<Void> completableFuture = CompletableFuture.runAsync( ()-> {
+            queueRegistry.addIntoQueue(topic, message);
+            queueProcessor.updateTopicSubscriptionsQueue(topic);
+        });
+        return Uni.createFrom().completionStage(completableFuture);
     }
 
     @Override

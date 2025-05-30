@@ -26,8 +26,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @QuarkusTest
-public class ServerBrokerIntegrationTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ServerBrokerIntegrationTest.class);
+public class BrokerIntegrationTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BrokerIntegrationTest.class);
 
     private final Vertx vertx = Vertx.vertx();
 
@@ -206,7 +206,7 @@ public class ServerBrokerIntegrationTest {
         CompletableFuture<Void> cf8 = CompletableFuture.runAsync(() -> receiveFrameNot(session3));
         CompletableFuture.allOf(cf5, cf7, cf8).join();
 
-        disconnectClient(session1, timer1, "4006");
+        disconnectClient(session1, timer1, "4008");
     }
 
     private long connectClient(String sessionId) {

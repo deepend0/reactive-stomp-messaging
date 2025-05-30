@@ -1,6 +1,7 @@
 package com.github.deepend0.reactivestomp.simplebroker;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import io.smallrye.common.constraint.Assert;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,7 +9,10 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SimpleBrokerTest {
@@ -108,19 +112,19 @@ public class SimpleBrokerTest {
 
     @Test
     public void shouldHaveMultipleTopics() {
-        List<String> messages1 = Lists.newArrayList("message1", "message2", "message3");
-        List<String> messages2 = Lists.newArrayList("message4", "message5", "message6");
-        List<String> messages3 = Lists.newArrayList("message7", "message8", "message9");
-        List<String> receivedMessages1 = new ArrayList<>();
-        List<String> receivedMessages2 = new ArrayList<>();
-        List<String> receivedMessages3 = new ArrayList<>();
+        Set<String> messages1 = Sets.newHashSet("message1", "message2", "message3");
+        Set<String> messages2 = Sets.newHashSet("message4", "message5", "message6");
+        Set<String> messages3 = Sets.newHashSet("message7", "message8", "message9");
+        Set<String> receivedMessages1 = new HashSet<>();
+        Set<String> receivedMessages2 = new HashSet<>();
+        Set<String> receivedMessages3 = new HashSet<>();
         Subscriber subscriber = new Subscriber("subscriber1");
         simpleBroker.subscribe(subscriber, "topic1").subscribe().with(m->receivedMessages1.add((String)m));
         simpleBroker.subscribe(subscriber, "topic2").subscribe().with(m->receivedMessages2.add((String)m));
         simpleBroker.subscribe(subscriber, "topic3").subscribe().with(m->receivedMessages3.add((String)m));
-        messages1.forEach(m->simpleBroker.send("topic1", m));
-        messages2.forEach(m->simpleBroker.send("topic2", m));
-        messages3.forEach(m->simpleBroker.send("topic3", m));
+        CompletableFuture.runAsync(()->messages1.forEach(m->simpleBroker.send("topic1", m)));
+        CompletableFuture.runAsync(()->messages2.forEach(m->simpleBroker.send("topic2", m)));
+        CompletableFuture.runAsync(()->messages3.forEach(m->simpleBroker.send("topic3", m)));
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(1000)).until(()->messages1.equals(receivedMessages1));
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(1000)).until(()->messages2.equals(receivedMessages2));
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(1000)).until(()->messages3.equals(receivedMessages3));

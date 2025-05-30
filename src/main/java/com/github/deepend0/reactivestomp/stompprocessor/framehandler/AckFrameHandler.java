@@ -6,6 +6,7 @@ import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.ext.stomp.Frames;
 import jakarta.enterprise.context.ApplicationScoped;
 
+// TODO
 @ApplicationScoped
 public class AckFrameHandler extends FrameHandler {
 

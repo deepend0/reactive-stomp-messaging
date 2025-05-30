@@ -113,7 +113,7 @@ public class ServerBrokerIntegrationTest {
         CompletableFuture<Void> cf1 = CompletableFuture.runAsync(()->sendMessage(session1, destination1, message1, "2004"));
         CompletableFuture<Void> cf2 = CompletableFuture.runAsync(()->receiveMessage(session1, subscription1, destination1, message1));
         CompletableFuture<Void> cf3 = CompletableFuture.runAsync(()->receiveMessage(session2, subscription2, destination1, message1));
-        CompletableFuture<Void> cf4 = CompletableFuture.runAsync(()->receiveFrameNot(session3));
+        CompletableFuture<Void> cf4 = CompletableFuture.runAsync(()-> receiveMessageNot(session3));
         CompletableFuture.allOf(cf1, cf2, cf3, cf4).join();
 
         unsubscribeClient(session2, subscription2, "2005");
@@ -121,7 +121,7 @@ public class ServerBrokerIntegrationTest {
 
         CompletableFuture<Void> cf5 = CompletableFuture.runAsync(()->sendMessage(session1, destination1, message2, "2007"));
         CompletableFuture<Void> cf6 = CompletableFuture.runAsync(()->receiveMessage(session1, subscription1, destination1, message2));
-        CompletableFuture<Void> cf7 = CompletableFuture.runAsync(()->receiveFrameNot(session2));
+        CompletableFuture<Void> cf7 = CompletableFuture.runAsync(()-> receiveMessageNot(session2));
         CompletableFuture<Void> cf8 = CompletableFuture.runAsync(()->receiveMessage(session3, subscription4, destination1, message2));
         CompletableFuture.allOf(cf5, cf6, cf7, cf8).join();
 
@@ -171,6 +171,44 @@ public class ServerBrokerIntegrationTest {
         disconnectClient(session3, timer3, "3009");
     }
 
+    @Test
+    public void shouldDisconnectAndDontReceivesMessagesAndHeartbeatAnymore() throws InterruptedException {
+        String session1 = "session10";
+        String session2 = "session11";
+        String session3 = "session12";
+
+        String subscription2 = "sub12";
+        String subscription3 = "sub13";
+
+        String destination = "/topic/chat";
+        String message = "Hello World!";
+
+        long timer1 = connectClient(session1);
+        long timer2 = connectClient(session2);
+        long timer3 = connectClient(session3);
+
+        subscribeClient(session2, subscription2, destination, "4002");
+        subscribeClient(session3, subscription3, destination, "4003");
+
+        CompletableFuture<Void> cf1 = CompletableFuture.runAsync(() -> sendMessage(session1, destination, message, "4004"));
+        CompletableFuture<Void> cf2 = CompletableFuture.runAsync(() -> receiveMessage(session2, subscription2, destination, message));
+        CompletableFuture<Void> cf3 = CompletableFuture.runAsync(() -> receiveMessage(session3, subscription3, destination, message));
+        CompletableFuture.allOf(cf1, cf2, cf3).join();
+
+        disconnectClient(session2, timer2, "4006");
+        disconnectClient(session3, timer3, "4007");
+
+        Thread.sleep(1000);
+        serverOutboundHeartbeats.clear();
+
+        CompletableFuture<Void> cf5 = CompletableFuture.runAsync(() -> sendMessage(session1, destination, message, "4005"));
+        CompletableFuture<Void> cf7 = CompletableFuture.runAsync(() -> receiveFrameNot(session2));
+        CompletableFuture<Void> cf8 = CompletableFuture.runAsync(() -> receiveFrameNot(session3));
+        CompletableFuture.allOf(cf5, cf7, cf8).join();
+
+        disconnectClient(session1, timer1, "4006");
+    }
+
     private long connectClient(String sessionId) {
         final byte[] connectFrame = FrameTestUtils.connectFrame("www.example.com", "500,500");
         final byte[] connectedFrame = FrameTestUtils.connectedFrame(sessionId, "1000,1000");
@@ -186,7 +224,6 @@ public class ServerBrokerIntegrationTest {
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(connectedFrame, first.message());
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> serverOutboundHeartbeats.size() > 2);
-        serverOutboundList.clear();
         return timerId;
     }
     
@@ -236,9 +273,15 @@ public class ServerBrokerIntegrationTest {
         Assertions.assertTrue(matcher.matches());
     }
 
-    private void receiveFrameNot(String sessionId) {
+    private void receiveMessageNot(String sessionId) {
         Awaitility.await().timeout(Duration.ofMillis(3000)).until(() -> serverOutboundList.isEmpty()
                 || !serverOutboundList.peek().sessionId().equals(sessionId));
+    }
+
+    private void receiveFrameNot(String sessionId) {
+        Awaitility.await().timeout(Duration.ofMillis(3000)).until(() -> (serverOutboundList.isEmpty()
+                || !serverOutboundList.peek().sessionId().equals(sessionId)) && (serverOutboundHeartbeats.isEmpty()
+                || !serverOutboundHeartbeats.peek().sessionId().equals(sessionId)));
     }
 
     private void disconnectClient(String sessionId, long timerId, String receipt) {

@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.*;
 
 public class QueueProcessor implements Runnable {
@@ -42,24 +43,28 @@ public class QueueProcessor implements Runnable {
     }
 
     public void removeTopicSubscription(TopicSubscription topicSubscription) {
-        topicSubscriptionsMap.get(topicSubscription.getTopic()).remove(topicSubscription);
-        subscriberSubscriptionsMap.get(topicSubscription.getSubscriber().getId()).remove(topicSubscription);
+        Optional.ofNullable(topicSubscriptionsMap.get(topicSubscription.getTopic()))
+                .ifPresent(topicSubscriptions->topicSubscriptions.remove(topicSubscription));
+        Optional.ofNullable(subscriberSubscriptionsMap.get(topicSubscription.getSubscriber().getId()))
+                .ifPresent(topicSubscriptions->topicSubscriptions.remove(topicSubscription));
     }
 
     public void removeSubscriptionsOfSubscriber(Subscriber subscriber) {
-        subscriberSubscriptionsMap.get(subscriber.getId())
-                .forEach(topicSubscription ->
-                        topicSubscriptionsMap.get(topicSubscription.getTopic())
-                                .remove(topicSubscription));
+        Optional.ofNullable(subscriberSubscriptionsMap.get(subscriber.getId()))
+            .ifPresent(subscriptions ->
+                subscriptions.forEach(topicSubscription ->
+                        Optional.ofNullable(topicSubscriptionsMap.get(topicSubscription.getTopic()))
+                            .ifPresent(topicSubscriptions->topicSubscriptions.remove(topicSubscription))));
         subscriberSubscriptionsMap.remove(subscriber.getId());
     }
 
     public void updateTopicSubscriptionsQueue(String topic) {
-        topicSubscriptionsMap.get(topic).forEach(topicSubscription -> {
-            if(!topicSubscriptionsQueue.contains(topicSubscription)) {
-                topicSubscriptionsQueue.add(topicSubscription);
-            }
-        });
+        Optional.ofNullable(topicSubscriptionsMap.get(topic))
+            .ifPresent(topicSubscriptions->topicSubscriptions.forEach(topicSubscription -> {
+                if(!topicSubscriptionsQueue.contains(topicSubscription)) {
+                    topicSubscriptionsQueue.add(topicSubscription);
+                }
+            }));
     }
 
     @Override

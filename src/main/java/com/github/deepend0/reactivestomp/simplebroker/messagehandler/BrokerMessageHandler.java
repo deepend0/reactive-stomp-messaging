@@ -24,23 +24,24 @@ public class BrokerMessageHandler {
     @Incoming("brokerInbound")
     public Uni<Void> handleBrokerMessage(BrokerMessage brokerMessage) {
         return switch (brokerMessage) {
-            case SubscribeMessage subscribeMessage -> {
-                simpleBroker.subscribe(
-                                new Subscriber(subscribeMessage.getSubscriberId()),
-                                subscribeMessage.getDestination())
-                        .onItem()
-                        .call(payload -> {
-                            SendMessage sendMessage = new SendMessage(subscribeMessage.getSubscriberId(),
-                                    subscribeMessage.getDestination(),
-                                    (byte[]) payload);
-                            return brokerOutboundEmitter.send(sendMessage);
-                        }).subscribe().with(
-                                ignored -> {
-                                },
-                                failure -> LOGGER.error("Broker outbound forwarding failed", failure)
-                        );
-                yield Uni.createFrom().voidItem();
-            }
+            case SubscribeMessage subscribeMessage ->
+                //Fire and forget
+                Uni.createFrom().voidItem().onItem().invoke(()->
+                    simpleBroker.subscribe(
+                                    new Subscriber(subscribeMessage.getSubscriberId()),
+                                    subscribeMessage.getDestination())
+                            .onItem()
+                            .call(payload -> {
+                                SendMessage sendMessage = new SendMessage(subscribeMessage.getSubscriberId(),
+                                        subscribeMessage.getDestination(),
+                                        (byte[]) payload);
+                                return brokerOutboundEmitter.send(sendMessage);
+                            }).subscribe().with(
+                            ignored -> {
+                            },
+                            failure -> LOGGER.error("Broker outbound forwarding failed", failure)
+                    )
+                );
             case UnsubscribeMessage unsubscribeMessage ->
                     simpleBroker.unsubscribe(new Subscriber(unsubscribeMessage.getSubscriberId()), unsubscribeMessage.getDestination());
             case SendMessage sendMessage -> simpleBroker.send(sendMessage.getDestination(), sendMessage.getPayload());

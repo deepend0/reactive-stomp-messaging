@@ -1,0 +1,33 @@
+plugins {
+    id 'io.quarkus' version "${quarkusPluginVersion}"
+}
+
+dependencies {
+    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    implementation 'io.quarkus:quarkus-config-yaml'
+    implementation 'io.quarkus:quarkus-arc'
+    implementation 'io.quarkus:quarkus-messaging'
+    implementation 'io.quarkiverse.reactivemessaging.http:quarkus-reactive-messaging-http:2.4.1'
+    implementation 'io.vertx:vertx-stomp:4.5.14'
+
+    testImplementation 'io.quarkus:quarkus-junit5-mockito'
+    testImplementation 'org.awaitility:awaitility:4.3.0'
+}
+
+sourceSets {
+    integrationTest {
+        java.srcDir "$projectDir/src/integrationTest/java"
+        resources.srcDir "$projectDir/src/integrationTest/resources"
+        compileClasspath += main.output
+        runtimeClasspath += main.output
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom implementation, testImplementation
+    integrationTestRuntimeOnly.extendsFrom runtimeOnly
+}
+
+tasks.named('processIntegrationTestResources') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

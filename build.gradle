@@ -1,42 +1,30 @@
-plugins {
-    id 'java'
-    id 'io.quarkus'
-}
+subprojects {
+    apply plugin: 'java-library'
 
-repositories {
-    mavenCentral()
-    mavenLocal()
-}
+    group 'com.github.deepend0'
+    version '1.0-SNAPSHOT'
 
-dependencies {
-    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
-    implementation 'io.quarkus:quarkus-config-yaml'
-    implementation 'io.quarkus:quarkus-arc'
-    implementation 'io.quarkus:quarkus-messaging'
-    implementation 'io.quarkiverse.reactivemessaging.http:quarkus-reactive-messaging-http:2.4.1'
-    implementation 'io.vertx:vertx-stomp:4.5.14'
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        mavenLocal()
+    }
 
-    testImplementation 'io.quarkus:quarkus-junit5-mockito'
-    testImplementation 'org.awaitility:awaitility:4.3.0'
-}
+    test {
+        systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
+    }
 
-group 'com.github.deepend0'
-version '1.0.0-SNAPSHOT'
+    java {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}
+    compileJava {
+        options.encoding = 'UTF-8'
+        options.compilerArgs << '-parameters'
+    }
 
-test {
-    systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
-}
-
-compileJava {
-    options.encoding = 'UTF-8'
-    options.compilerArgs << '-parameters'
-}
-
-compileTestJava {
-    options.encoding = 'UTF-8'
+    compileTestJava {
+        options.encoding = 'UTF-8'
+    }
 }

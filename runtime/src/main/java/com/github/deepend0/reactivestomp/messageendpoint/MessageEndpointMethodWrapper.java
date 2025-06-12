@@ -11,13 +11,13 @@ import java.util.function.Function;
 public class MessageEndpointMethodWrapper<I, O> {
     private final Logger LOGGER = LoggerFactory.getLogger(MessageEndpointMethodWrapper.class);
     private final MessageEndpoint messageEndpoint;
-    private final Function<I, Object> methodRef;
-    private final Class<I> inputArgType;
+    private final Function<I, Object> methodWrapper;
+    private final Class<I> parameterType;
 
-    public MessageEndpointMethodWrapper(MessageEndpoint messageEndpoint, Function<I, Object> methodRef, Class<I> inputArgType) {
+    public MessageEndpointMethodWrapper(MessageEndpoint messageEndpoint, Function<I, Object> methodWrapper, Class<I> parameterType) {
         this.messageEndpoint = messageEndpoint;
-        this.methodRef = methodRef;
-        this.inputArgType = inputArgType;
+        this.methodWrapper = methodWrapper;
+        this.parameterType = parameterType;
     }
 
     public byte[] serialize(Serde serde, O o) throws IOException {
@@ -25,20 +25,20 @@ public class MessageEndpointMethodWrapper<I, O> {
     }
 
     public I deserialize(Serde serde, byte[] bytes)  throws IOException {
-        return serde.deserialize(bytes, inputArgType);
+        return serde.deserialize(bytes, parameterType);
     }
 
     public MessageEndpoint getMessageEndpoint() {
         return messageEndpoint;
     }
 
-    public Function<I, Object> getMethodRef() {
-        return methodRef;
+    public Function<I, Object> getMethodWrapper() {
+        return methodWrapper;
     }
 
     public Multi<byte[]> call(Serde serde, byte [] bytes) {
         try {
-            Object result = methodRef.apply(deserialize(serde, bytes));
+            Object result = methodWrapper.apply(deserialize(serde, bytes));
 
             Multi<O> multiResult = switch (result) {
                 case Uni<?> uni -> ((Uni<O>) uni).toMulti();

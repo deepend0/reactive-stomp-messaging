@@ -104,6 +104,7 @@ public class SimpleBrokerTest {
         simpleBroker.subscribe(subscriber2, "topic1").subscribe().with(m->receivedMessages2.add((String)m));
         simpleBroker.subscribe(subscriber3, "topic1").subscribe().with(m->receivedMessages3.add((String)m));
         messages.forEach(m->simpleBroker.send("topic1", m));
+        //TODO Occasionally Fails
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(1000)).until(()->messages.equals(receivedMessages1));
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(1000)).until(()->messages.equals(receivedMessages2));
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(1000)).until(()->messages.equals(receivedMessages3));

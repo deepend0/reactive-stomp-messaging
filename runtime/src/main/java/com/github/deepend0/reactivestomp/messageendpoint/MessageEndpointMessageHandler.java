@@ -40,7 +40,7 @@ public class MessageEndpointMessageHandler {
                                 .onItem().invoke(() -> result
                                         .map(payload -> new SendMessage(
                                                 "server",
-                                                messageEndpointMethodWrapper.getMessageEndpoint().outboundDestination(),
+                                                messageEndpointMethodWrapper.getOutboundDestination(),
                                                 payload))
                                         .onItem()
                                         .transformToUni(brokerInboundEmitter::send)

@@ -10,12 +10,15 @@ import java.util.function.Function;
 
 public class MessageEndpointMethodWrapper<I, O> {
     private final Logger LOGGER = LoggerFactory.getLogger(MessageEndpointMethodWrapper.class);
-    private final MessageEndpoint messageEndpoint;
+    private final String inboundDestination;
+    private final String outboundDestination;
+    //TODO Create Uni and Multi wrappers separately
     private final Function<I, Object> methodWrapper;
     private final Class<I> parameterType;
 
-    public MessageEndpointMethodWrapper(MessageEndpoint messageEndpoint, Function<I, Object> methodWrapper, Class<I> parameterType) {
-        this.messageEndpoint = messageEndpoint;
+    public MessageEndpointMethodWrapper(String inboundDestination, String outboundDestination, Function<I, Object> methodWrapper, Class<I> parameterType) {
+        this.inboundDestination = inboundDestination;
+        this.outboundDestination = outboundDestination;
         this.methodWrapper = methodWrapper;
         this.parameterType = parameterType;
     }
@@ -28,12 +31,20 @@ public class MessageEndpointMethodWrapper<I, O> {
         return serde.deserialize(bytes, parameterType);
     }
 
-    public MessageEndpoint getMessageEndpoint() {
-        return messageEndpoint;
+    public String getInboundDestination() {
+        return inboundDestination;
+    }
+
+    public String getOutboundDestination() {
+        return outboundDestination;
     }
 
     public Function<I, Object> getMethodWrapper() {
         return methodWrapper;
+    }
+
+    public Class<I> getParameterType() {
+        return parameterType;
     }
 
     public Multi<byte[]> call(Serde serde, byte [] bytes) {

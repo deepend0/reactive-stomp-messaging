@@ -1,10 +1,10 @@
-package com.github.deepend0.reactivestomp.extension;
+package com.github.deepend0.reactivestomp.messageendpoint.build;
 
 import io.quarkus.builder.item.MultiBuildItem;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.MethodInfo;
 
-public class MessageEndpointMetadata extends MultiBuildItem {
+public final class MessageEndpointMetadata extends MultiBuildItem {
     private final String inboundDestination;
     private final String outboundDestination;
     private final ClassInfo classInfo;

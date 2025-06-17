@@ -1,34 +1,26 @@
-package com.github.deepend0.reactivestomp.extension;
+package com.github.deepend0.reactivestomp.messageendpoint.build;
 
 import com.github.deepend0.reactivestomp.messageendpoint.MessageEndpoint;
 import com.github.deepend0.reactivestomp.messageendpoint.MessageEndpointMethodWrapper;
 import com.github.deepend0.reactivestomp.messageendpoint.MessageEndpointRegistry;
-import io.quarkus.Generated;
-import io.quarkus.deployment.GeneratedClassGizmoAdaptor;
+import io.quarkus.arc.deployment.GeneratedBeanBuildItem;
+import io.quarkus.arc.deployment.GeneratedBeanGizmoAdaptor;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
-import io.quarkus.deployment.builditem.GeneratedClassBuildItem;
-import io.quarkus.gizmo.ClassCreator;
-import io.quarkus.gizmo.ClassOutput;
-import io.quarkus.gizmo.FieldCreator;
-import io.quarkus.gizmo.FieldDescriptor;
-import io.quarkus.gizmo.MethodCreator;
-import io.quarkus.gizmo.MethodDescriptor;
-import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.gizmo.*;
 import io.quarkus.gizmo.Type;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import javax.lang.model.element.Modifier;
 
-import jakarta.inject.Inject;
 import org.jboss.jandex.*;
+import org.objectweb.asm.Opcodes;
 
 public class MessageEndpointAnnotationProcessor {
 
@@ -76,62 +68,107 @@ public class MessageEndpointAnnotationProcessor {
   @BuildStep
   public void generateMethodWrapperClasses(
       List<MessageEndpointMetadata> messageEndpointMetadataList,
-      BuildProducer<GeneratedClassBuildItem> generatedClassBuildItemBuildProducer) {
+      BuildProducer<GeneratedBeanBuildItem> generatedBeanBuildItemBuildProducer) {
     ClassOutput classOutput =
-        new GeneratedClassGizmoAdaptor(generatedClassBuildItemBuildProducer, true);
+        new GeneratedBeanGizmoAdaptor(generatedBeanBuildItemBuildProducer);
 
     for (MessageEndpointMetadata metadata : messageEndpointMetadataList) {
       ClassInfo classInfo = metadata.getClassInfo();
       MethodInfo methodInfo = metadata.getMethodInfo();
 
-      String className = classInfo.name().toString();
-      String wrapperClassName = className + "_" + methodInfo.name() + "Wrapper";
+      String className = classInfo.name().toString('_');
 
+      Type inputType = Type.classType(methodInfo.parameters().get(0).type().name());
+      Type outputType = Type.classType(methodInfo.returnType().name());
+      Type.ParameterizedType functionType =
+          Type.parameterizedType(
+              Type.classType(Function.class),
+              inputType,
+              outputType);
+
+      SignatureBuilder signatureBuilder = SignatureBuilder.forClass()
+          .addInterface(functionType);
       try (ClassCreator classCreator =
           ClassCreator.builder()
               .classOutput(classOutput)
-              .className(wrapperClassName)
-              .setFinal(true)
+              .className(getWrapperClassName(className, methodInfo.name()))
               .superClass(Object.class)
+              .interfaces(Function.class)
+              .signature(signatureBuilder.build())
               .build()) {
 
-        classCreator.addAnnotation(Generated.class);
         classCreator.addAnnotation(ApplicationScoped.class);
 
         String fieldName = buildFieldNameFromClassName(classInfo.simpleName());
 
-        FieldDescriptor fieldDescriptor =
-            classCreator
-                .getFieldCreator(fieldName, className)
-                .setModifiers(Modifier.PRIVATE.ordinal() | Modifier.FINAL.ordinal())
-                .getFieldDescriptor();
+        FieldCreator fieldCreator =  classCreator
+                .getFieldCreator(fieldName, classInfo.name().toString())
+                .setModifiers(Opcodes.ACC_PRIVATE);
+        FieldDescriptor fieldDescriptor = fieldCreator.getFieldDescriptor();
 
         // Constructor
-        try (MethodCreator methodCreator = classCreator.getConstructorCreator(className)) {
-          methodCreator.setModifiers(Modifier.PUBLIC.ordinal());
-          methodCreator.writeInstanceField(
-              fieldDescriptor, methodCreator.getThis(), methodCreator.getMethodParam(0));
-          methodCreator.returnValue(null);
+        try (MethodCreator constructorCreator = classCreator.getConstructorCreator(new String[]{})) {
+          constructorCreator.invokeSpecialMethod(MethodDescriptor.ofConstructor(Object.class), constructorCreator.getThis());
+          constructorCreator.setModifiers(Opcodes.ACC_PUBLIC);
+          constructorCreator.returnValue(null);
+        }
+
+        //Create getter and setter for the injected field
+        try (MethodCreator getter =
+            classCreator.getMethodCreator("get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1), classInfo.name().toString())) {
+          getter.setModifiers(Opcodes.ACC_PUBLIC);
+          ResultHandle instance = getter.readInstanceField(fieldDescriptor, getter.getThis());
+          getter.returnValue(instance);
+        }
+        try (MethodCreator setter =
+            classCreator.getMethodCreator("set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1), void.class, classInfo.name().toString())) {
+          setter.setModifiers(Opcodes.ACC_PUBLIC);
+          setter.addAnnotation(Inject.class);
+          ResultHandle instance = setter.getMethodParam(0);
+          setter.writeInstanceField(fieldDescriptor, setter.getThis(), instance);
+          setter.returnValue(null);
         }
 
         // Apply method
         List<MethodParameterInfo> params = methodInfo.parameters();
         if (params.size() == 1) {
           String returnType = methodInfo.returnType().name().toString();
-          String paramType = params.get(0).name();
+          String paramType = params.get(0).type().toString();
 
           try (MethodCreator apply =
               classCreator.getMethodCreator("apply", returnType, paramType)) {
-            apply.setModifiers(Modifier.PUBLIC.ordinal());
+            apply.setModifiers(Opcodes.ACC_PUBLIC);
             ResultHandle instance = apply.readInstanceField(fieldDescriptor, apply.getThis());
             ResultHandle result =
                 apply.invokeVirtualMethod(
-                    MethodDescriptor.ofMethod(className, methodInfo.name(), returnType, paramType),
+                    MethodDescriptor.ofMethod(classInfo.name().toString(), methodInfo.name(), returnType, paramType),
                     instance,
                     apply.getMethodParam(0));
             apply.returnValue(result);
           }
+
+          //Create another apply method just takes an object and returns an object using the apply method above and type casting
+          try (MethodCreator applyObject =
+                       classCreator.getMethodCreator("apply", Object.class, Object.class)) {
+            applyObject.setModifiers(Opcodes.ACC_PUBLIC);
+            ResultHandle instance = applyObject.readInstanceField(fieldDescriptor, applyObject.getThis());
+            ResultHandle param = applyObject.getMethodParam(0);
+
+            // Cast input to the expected type
+            ResultHandle castedInput = applyObject.checkCast(param, params.getFirst().type().name().toString());
+
+            // Call the original apply method
+            ResultHandle result =
+                    applyObject.invokeVirtualMethod(
+                            MethodDescriptor.ofMethod(classInfo.name().toString(), methodInfo.name(), returnType, paramType),
+                            instance,
+                            castedInput);
+
+            // Cast result to Object
+            applyObject.returnValue(applyObject.checkCast(result, Object.class));
+          }
         }
+
       }
     }
   }
@@ -161,9 +198,9 @@ public class MessageEndpointAnnotationProcessor {
   @BuildStep
   void generateRegistryClass(
       List<MessageEndpointMetadata> messageEndpointMetadataList,
-      BuildProducer<GeneratedClassBuildItem> generatedClassProducer) {
+      BuildProducer<GeneratedBeanBuildItem> generatedBeanProducer) {
 
-    ClassOutput classOutput = new GeneratedClassGizmoAdaptor(generatedClassProducer, true);
+    ClassOutput classOutput = new GeneratedBeanGizmoAdaptor(generatedBeanProducer);
 
     try (ClassCreator classCreator =
         ClassCreator.builder()
@@ -171,10 +208,8 @@ public class MessageEndpointAnnotationProcessor {
             .className(REGISTRY_CLASS_NAME)
             .interfaces(MessageEndpointRegistry.class)
             .superClass(Object.class)
-            .setFinal(true)
             .build()) {
 
-      classCreator.addAnnotation(Generated.class);
       classCreator.addAnnotation(ApplicationScoped.class);
 
       // Inject wrapper fields + collect by inbound destination
@@ -186,15 +221,30 @@ public class MessageEndpointAnnotationProcessor {
             .add(meta);
 
         // Declare injected field
-        String wrapperClass =
-            meta.getClassInfo().name() + "_" + meta.getMethodInfo().name() + "Wrapper";
-        String fieldName = buildFieldNameFromClassName(wrapperClass);
+        String wrapperClass = getWrapperClassName(meta.getClassInfo().name().toString('_'), meta.getMethodInfo().name());
+        String fieldName = getWrapperFieldName(meta.getClassInfo().name().toString('_'), meta.getMethodInfo().name());
 
         FieldCreator field =
             classCreator
                 .getFieldCreator(fieldName, wrapperClass)
-                .setModifiers(Modifier.PRIVATE.ordinal());
-        field.addAnnotation(Inject.class);
+                .setModifiers(Opcodes.ACC_PRIVATE);
+
+        //Create getter and setter for the injected field
+        try (MethodCreator getter =
+            classCreator.getMethodCreator("get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1), wrapperClass)) {
+          getter.setModifiers(Opcodes.ACC_PUBLIC);
+          ResultHandle instance = getter.readInstanceField(field.getFieldDescriptor(), getter.getThis());
+          getter.returnValue(instance);
+        }
+
+        try (MethodCreator setter =
+            classCreator.getMethodCreator("set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1), void.class, wrapperClass)) {
+          setter.setModifiers(Opcodes.ACC_PUBLIC);
+          setter.addAnnotation(Inject.class);
+          ResultHandle instance = setter.getMethodParam(0);
+          setter.writeInstanceField(field.getFieldDescriptor(), setter.getThis(), instance);
+          setter.returnValue(null);
+        }
       }
 
       Type registryType =
@@ -211,14 +261,17 @@ public class MessageEndpointAnnotationProcessor {
       // Registry field
       FieldDescriptor registryField =
           classCreator
-              .getFieldCreator("registry", registryType)
-              .setModifiers(Modifier.PRIVATE.ordinal() | Modifier.FINAL.ordinal())
+              .getFieldCreator("registry", Map.class)
+              .setSignature(SignatureBuilder.forField().setType(registryType).build())
+              .setModifiers(Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL)
               .getFieldDescriptor();
 
       // Constructor
-      try (MethodCreator ctor = classCreator.getConstructorCreator((Class<?>) null)) {
-        ResultHandle newMap = ctor.newInstance(MethodDescriptor.ofConstructor(HashMap.class));
-        ctor.writeInstanceField(registryField, ctor.getThis(), newMap);
+      try (MethodCreator constructorCreator = classCreator.getConstructorCreator(new String[]{})) {
+        constructorCreator.invokeSpecialMethod(MethodDescriptor.ofConstructor(Object.class), constructorCreator.getThis());
+        ResultHandle newMap = constructorCreator.newInstance(MethodDescriptor.ofConstructor(HashMap.class));
+        constructorCreator.writeInstanceField(registryField, constructorCreator.getThis(), newMap);
+        constructorCreator.returnValue(null);
       }
 
       // Move the post construct method in constructor
@@ -235,45 +288,38 @@ public class MessageEndpointAnnotationProcessor {
           ResultHandle list = init.newInstance(MethodDescriptor.ofConstructor(ArrayList.class));
 
           for (MessageEndpointMetadata endpointMetadata : endpointMetadataList) {
-            String className = endpointMetadata.getClassInfo().name().toString();
-            String methodName = endpointMetadata.getMethodInfo().name();
-            String fieldClass = className + "_" + methodName + "Wrapper";
-            String fieldName = buildFieldNameFromClassName(fieldClass);
+            String fieldClass = getWrapperClassName(endpointMetadata.getClassInfo().name().toString('_'),
+                    endpointMetadata.getMethodInfo().name());
+            String fieldName = getWrapperFieldName(endpointMetadata.getClassInfo().name().toString('_'),
+                    endpointMetadata.getMethodInfo().name());
 
             // Get wrapper field
             ResultHandle wrapper =
                 init.readInstanceField(
                     FieldDescriptor.of(REGISTRY_CLASS_NAME, fieldName, fieldClass), init.getThis());
 
-            // Build MessageEndpoint constructor
-            ResultHandle messageEndpoint =
-                init.newInstance(
-                    MethodDescriptor.ofConstructor(
-                        MessageEndpoint.class, String.class, String.class),
-                    init.load(endpointMetadata.getInboundDestination()),
-                    init.load(endpointMetadata.getOutboundDestination()));
-
             // Load class for input parameter type
-            String inputType = endpointMetadata.getMethodInfo().parameters().get(0).name();
-            ResultHandle inputClass = init.loadClass(inputType);
+            String inputType = endpointMetadata.getMethodInfo().parameters().get(0).type().name().toString();
 
-            // Build wrapper bean
-            ResultHandle wrapperBean =
+            // Build wrapper
+            ResultHandle methodWrapper =
                 init.newInstance(
                     MethodDescriptor.ofConstructor(
                         MessageEndpointMethodWrapper.class,
-                        MessageEndpoint.class,
+                        String.class,
+                        String.class,
                         Function.class.getName(),
                         Class.class),
-                    messageEndpoint,
+                    init.load(endpointMetadata.getInboundDestination()),
+                    init.load(endpointMetadata.getOutboundDestination()),
                     wrapper, // function reference (uses apply)
-                    inputClass);
+                    init.loadClass(inputType));
 
             // list.add(wrapperBean)
             init.invokeInterfaceMethod(
                 MethodDescriptor.ofMethod(List.class, "add", boolean.class, Object.class),
                 list,
-                wrapperBean);
+                methodWrapper);
           }
 
           // map.put(destination, list)
@@ -313,6 +359,14 @@ public class MessageEndpointAnnotationProcessor {
   }
 
   private static String buildFieldNameFromClassName(String className) {
-    return className.substring(0, 0).toLowerCase() + className.substring(1);
+    return className.substring(0, 1).toLowerCase() + className.substring(1);
+  }
+
+  private static String getWrapperClassName(String className, String methodName) {
+    return "com.github.deepend0.reactivestomp.messageendpoint." + className + "_" + methodName + "Wrapper";
+  }
+
+  private static String getWrapperFieldName(String className, String methodName) {
+    return buildFieldNameFromClassName(className + "_" + methodName + "Wrapper");
   }
 }

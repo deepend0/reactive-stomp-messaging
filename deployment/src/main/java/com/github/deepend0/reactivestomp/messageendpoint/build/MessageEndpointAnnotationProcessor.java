@@ -22,6 +22,11 @@ import java.util.function.Function;
 import org.jboss.jandex.*;
 import org.objectweb.asm.Opcodes;
 
+
+//TODOs
+// Handle classes annotated with @MessageEndpoint
+// Handle primitive types as method parameters
+// Check if input parameter types are assignable
 public class MessageEndpointAnnotationProcessor {
 
   private static final String REGISTRY_CLASS_NAME =

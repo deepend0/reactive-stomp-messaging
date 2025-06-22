@@ -10,6 +10,8 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.gizmo.*;
 import io.quarkus.gizmo.Type;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -53,23 +55,6 @@ public class MessageEndpointAnnotationProcessor {
     }
   }
 
-  /* Example of generated a message endpoint method wrapper class:
-
-  @ApplicationScoped
-  public final class com.example.MyEndpoint_processWrapper {
-
-      private final MyEndpoint myEndpoint;
-
-      public com.example.MyEndpoint_processWrapper(MyEndpoint myEndpoint) {
-          this.myEndpoint = myEndpoint;
-      }
-
-      public String apply(String input) {
-          return myEndpoint.process(input);
-      }
-  }
-  */
-
   @BuildStep
   public void generateMethodWrapperClasses(
       List<MessageEndpointMetadata> messageEndpointMetadataList,
@@ -84,12 +69,25 @@ public class MessageEndpointAnnotationProcessor {
       String className = classInfo.name().toString('_');
 
       Type inputType = Type.classType(methodInfo.parameters().get(0).type().name());
-      Type outputType = Type.classType(methodInfo.returnType().name());
+
+      org.jboss.jandex.Type methodReturnTypeJandex = methodInfo.returnType();
+      List<MethodParameterInfo> methodParams = methodInfo.parameters();
+      Type methodReturnType;
+
+      if(methodReturnTypeJandex.name().equals(DotName.createSimple(Uni.class))
+              || methodReturnTypeJandex.name().equals(DotName.createSimple(Multi.class))) {
+        methodReturnType = Type.parameterizedType(
+                Type.classType(methodReturnTypeJandex.name()),
+                Type.classType(methodReturnTypeJandex.asParameterizedType().arguments().get(0).name()));
+      } else {
+        methodReturnType = Type.classType(methodReturnTypeJandex.name());
+      }
+
       Type.ParameterizedType functionType =
           Type.parameterizedType(
               Type.classType(Function.class),
               inputType,
-              outputType);
+              methodReturnType);
 
       SignatureBuilder signatureBuilder = SignatureBuilder.forClass()
           .addInterface(functionType);
@@ -135,24 +133,9 @@ public class MessageEndpointAnnotationProcessor {
         }
 
         // Apply method
-        List<MethodParameterInfo> params = methodInfo.parameters();
-        if (params.size() == 1) {
-          String returnType = methodInfo.returnType().name().toString();
-          String paramType = params.get(0).type().toString();
+        if (methodParams.size() == 1) {
+          String paramType = methodParams.get(0).type().name().toString();
 
-          try (MethodCreator apply =
-              classCreator.getMethodCreator("apply", returnType, paramType)) {
-            apply.setModifiers(Opcodes.ACC_PUBLIC);
-            ResultHandle instance = apply.readInstanceField(fieldDescriptor, apply.getThis());
-            ResultHandle result =
-                apply.invokeVirtualMethod(
-                    MethodDescriptor.ofMethod(classInfo.name().toString(), methodInfo.name(), returnType, paramType),
-                    instance,
-                    apply.getMethodParam(0));
-            apply.returnValue(result);
-          }
-
-          //Create another apply method just takes an object and returns an object using the apply method above and type casting
           try (MethodCreator applyObject =
                        classCreator.getMethodCreator("apply", Object.class, Object.class)) {
             applyObject.setModifiers(Opcodes.ACC_PUBLIC);
@@ -160,46 +143,23 @@ public class MessageEndpointAnnotationProcessor {
             ResultHandle param = applyObject.getMethodParam(0);
 
             // Cast input to the expected type
-            ResultHandle castedInput = applyObject.checkCast(param, params.getFirst().type().name().toString());
+            ResultHandle castedInput = applyObject.checkCast(param, methodParams.getFirst().type().name().toString());
 
             // Call the original apply method
             ResultHandle result =
                     applyObject.invokeVirtualMethod(
-                            MethodDescriptor.ofMethod(classInfo.name().toString(), methodInfo.name(), returnType, paramType),
+                            MethodDescriptor.ofMethod(classInfo.name().toString(), methodInfo.name(), methodReturnTypeJandex.name().toString(), paramType),
                             instance,
                             castedInput);
 
             // Cast result to Object
-            applyObject.returnValue(applyObject.checkCast(result, Object.class));
+            applyObject.returnValue(applyObject.checkCast(result, methodReturnTypeJandex.name().toString()));
           }
         }
-
       }
     }
   }
 
-  /* Example of generated class for a message endpoint registry:
-  @ApplicationScoped
-  public class GeneratedMessageEndpointRegistry implements MessageEndpointRegistry {
-
-      @Inject
-      MyService_myMethodWrapper myService_myMethodWrapper;
-
-      private final Map<String, List<MessageEndpointMethodWrapper<?, ?>>> registry = new HashMap<>();
-
-      @PostConstruct
-      void init() {
-          registry.put("inbound-topic", List.of(
-              new MessageEndpointMethodWrapper<>(new MessageEndpoint("inbound-topic", "outbound-topic"), myService_myMethodWrapper::apply, String.class)
-          ));
-      }
-
-      @Override
-      public List<MessageEndpointMethodWrapper<?, ?>> getMessageEndpoints(String destination) {
-          return registry.getOrDefault(destination, List.of());
-      }
-  }
-  */
   @BuildStep
   void generateRegistryClass(
       List<MessageEndpointMetadata> messageEndpointMetadataList,
@@ -306,18 +266,22 @@ public class MessageEndpointAnnotationProcessor {
             // Load class for input parameter type
             String inputType = endpointMetadata.getMethodInfo().parameters().get(0).type().name().toString();
 
+            org.jboss.jandex.Type returnType = endpointMetadata.getMethodInfo().returnType();
+
+            org.jboss.jandex.Type functionType = ParameterizedType.create(Function.class, endpointMetadata.getMethodInfo().parameters().get(0).type(), returnType);
+
             // Build wrapper
             ResultHandle methodWrapper =
                 init.newInstance(
                     MethodDescriptor.ofConstructor(
-                        MessageEndpointMethodWrapper.class,
-                        String.class,
-                        String.class,
-                        Function.class.getName(),
-                        Class.class),
+                            MessageEndpointMethodWrapper.class,
+                            String.class,
+                            String.class,
+                            DescriptorUtils.typeToString(functionType),
+                            Class.class),
                     init.load(endpointMetadata.getInboundDestination()),
                     init.load(endpointMetadata.getOutboundDestination()),
-                    wrapper, // function reference (uses apply)
+                    init.checkCast(wrapper, DescriptorUtils.typeToString(functionType)), // function reference (uses apply)
                     init.loadClass(inputType));
 
             // list.add(wrapperBean)

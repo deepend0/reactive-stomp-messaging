@@ -85,4 +85,18 @@ public class MessageEndpointAnnotationProcessorTest {
                 .forEach(integerUni -> integerUni.subscribe().with(result::add));
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(1000)).until(() -> result.size() == 20 && result.containsAll(IntStream.range(1, 22).filter(i -> i != 11).boxed().toList()));
     }
+
+    @Test
+    public void shouldProcessDestinationWithNonAsyncEndpoints() {
+        List<MessageEndpointMethodWrapper<?, ?>> messageEndpointMethodWrappers = messageEndpointRegistry.getMessageEndpoints("inboundDestination5");
+        Assertions.assertEquals(2, messageEndpointMethodWrappers.size());
+        Assertions.assertTrue(messageEndpointMethodWrappers
+                .stream()
+                .allMatch(messageEndpointMethodWrapper -> "inboundDestination5".equals(messageEndpointMethodWrapper.getInboundDestination())
+                        && "outboundDestination6".equals(messageEndpointMethodWrapper.getOutboundDestination())));
+        List<Integer> result = new ArrayList<>();
+        messageEndpointMethodWrappers.stream().map(messageEndpointMethodWrapper ->
+                        (String) ((MessageEndpointMethodWrapper<String, String>) messageEndpointMethodWrapper).getMethodWrapper().apply("Jupiter"))
+                .toList().containsAll(List.of("Bonjour Mars", "Ciao Mars"));
+    }
 }

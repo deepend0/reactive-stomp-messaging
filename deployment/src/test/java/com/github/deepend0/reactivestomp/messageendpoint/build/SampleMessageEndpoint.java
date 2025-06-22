@@ -17,11 +17,16 @@ public class SampleMessageEndpoint {
 
     @MessageEndpoint(inboundDestination = "inboundDestination3", outboundDestination = "outboundDestination3")
     public Uni<Integer> squareMethod(Integer value) {
-        return Uni.createFrom().item(value*value);
+        return Uni.createFrom().item(value * value);
     }
 
     @MessageEndpoint(inboundDestination = "inboundDestination4", outboundDestination = "outboundDestination5")
     public Multi<Integer> nextTen(Integer value) {
-        return Multi.createFrom().items(IntStream.range(value+1, value+11).boxed());
+        return Multi.createFrom().items(IntStream.range(value + 1, value + 11).boxed());
+    }
+
+    @MessageEndpoint(inboundDestination = "inboundDestination5", outboundDestination = "outboundDestination6")
+    public String greetingNonAsyncValue(String name) {
+        return "Bonjour " + name;
     }
 }

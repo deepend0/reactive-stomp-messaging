@@ -1,5 +1,7 @@
 package com.github.deepend0.reactivestomp.simplebroker;
 
+import com.github.deepend0.reactivestomp.simplebroker.SimpleBroker;
+import com.github.deepend0.reactivestomp.simplebroker.Subscriber;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.smallrye.common.constraint.Assert;

@@ -1,7 +1,8 @@
-package com.github.deepend0.reactivestomp.stompprocessor;
+package com.github.deepend0.reactivestomp.test.stompprocessor;
 
 import com.github.deepend0.reactivestomp.external.ExternalMessage;
 import com.github.deepend0.reactivestomp.simplebroker.messagehandler.*;
+import com.github.deepend0.reactivestomp.stompprocessor.MessageIdGenerator;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;

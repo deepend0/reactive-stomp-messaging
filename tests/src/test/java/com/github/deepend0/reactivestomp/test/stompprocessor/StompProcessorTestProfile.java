@@ -1,4 +1,4 @@
-package com.github.deepend0.reactivestomp.stompprocessor;
+package com.github.deepend0.reactivestomp.test.stompprocessor;
 
 import io.quarkus.test.junit.QuarkusTestProfile;
 

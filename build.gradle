@@ -9,11 +9,6 @@ subprojects {
         gradlePluginPortal()
     }
 
-    test {
-        systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
-        useJUnitPlatform()
-    }
-
     java {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
@@ -26,5 +21,12 @@ subprojects {
 
     compileTestJava {
         options.encoding = 'UTF-8'
+    }
+
+    reporting.baseDirectory = file("reports")
+
+    test {
+        systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
+        useJUnitPlatform()
     }
 }

@@ -1,9 +1,11 @@
 dependencies {
-    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    implementation platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
     implementation project(':reactive-stomp')
     implementation 'io.quarkus:quarkus-core-deployment'
-    implementation 'org.jboss:jandex:3.1.1.Final'
-    implementation 'io.quarkus.gizmo:gizmo:1.1.9.Final'
+    implementation 'io.quarkus:quarkus-arc-deployment'
+    implementation 'io.quarkus:quarkus-config-yaml-deployment'
+    implementation 'io.quarkus:quarkus-messaging-deployment'
+    implementation 'io.quarkus:quarkus-jackson-deployment'
 
-    testImplementation 'io.quarkus:quarkus-junit5-mockito'
+    testImplementation 'io.quarkus:quarkus-junit5-internal'
 }

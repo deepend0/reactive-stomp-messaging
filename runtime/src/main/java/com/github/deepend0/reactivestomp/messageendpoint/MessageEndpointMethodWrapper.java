@@ -10,14 +10,17 @@ import java.util.function.Function;
 
 public class MessageEndpointMethodWrapper<I, O> {
     private final Logger LOGGER = LoggerFactory.getLogger(MessageEndpointMethodWrapper.class);
-    private final MessageEndpoint messageEndpoint;
-    private final Function<I, Object> methodRef;
-    private final Class<I> inputArgType;
+    private final String inboundDestination;
+    private final String outboundDestination;
+    //TODO Create Uni and Multi wrappers separately
+    private final Function<I, Object> methodWrapper;
+    private final Class<I> parameterType;
 
-    public MessageEndpointMethodWrapper(MessageEndpoint messageEndpoint, Function<I, Object> methodRef, Class<I> inputArgType) {
-        this.messageEndpoint = messageEndpoint;
-        this.methodRef = methodRef;
-        this.inputArgType = inputArgType;
+    public MessageEndpointMethodWrapper(String inboundDestination, String outboundDestination, Function<I, Object> methodWrapper, Class<I> parameterType) {
+        this.inboundDestination = inboundDestination;
+        this.outboundDestination = outboundDestination;
+        this.methodWrapper = methodWrapper;
+        this.parameterType = parameterType;
     }
 
     public byte[] serialize(Serde serde, O o) throws IOException {
@@ -25,20 +28,28 @@ public class MessageEndpointMethodWrapper<I, O> {
     }
 
     public I deserialize(Serde serde, byte[] bytes)  throws IOException {
-        return serde.deserialize(bytes, inputArgType);
+        return serde.deserialize(bytes, parameterType);
     }
 
-    public MessageEndpoint getMessageEndpoint() {
-        return messageEndpoint;
+    public String getInboundDestination() {
+        return inboundDestination;
     }
 
-    public Function<I, Object> getMethodRef() {
-        return methodRef;
+    public String getOutboundDestination() {
+        return outboundDestination;
+    }
+
+    public Function<I, Object> getMethodWrapper() {
+        return methodWrapper;
+    }
+
+    public Class<I> getParameterType() {
+        return parameterType;
     }
 
     public Multi<byte[]> call(Serde serde, byte [] bytes) {
         try {
-            Object result = methodRef.apply(deserialize(serde, bytes));
+            Object result = methodWrapper.apply(deserialize(serde, bytes));
 
             Multi<O> multiResult = switch (result) {
                 case Uni<?> uni -> ((Uni<O>) uni).toMulti();

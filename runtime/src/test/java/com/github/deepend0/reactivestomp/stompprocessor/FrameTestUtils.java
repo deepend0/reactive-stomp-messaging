@@ -22,7 +22,7 @@ public class FrameTestUtils {
     public static byte[] connectedFrame(String sessionId, String heartBeat) {
         String frame = """
             CONNECTED
-            server:vertx-stomp/4.5.13
+            server:vertx-stomp/4.5.14
             heart-beat:%s
             session:%s
             version:1.2

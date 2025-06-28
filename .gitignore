@@ -2,29 +2,16 @@
 .gradle/
 gradle/
 gradlew*
-build/
 
-# Eclipse
-.project
-.classpath
-.settings/
-bin/
+# Build output
+build/
+target/
 
 # IntelliJ
 .idea
 *.ipr
 *.iml
 *.iws
-
-# NetBeans
-nb-configuration.xml
-
-# Visual Studio Code
-.vscode
-.factorypath
-
-# OSX
-.DS_Store
 
 # Vim
 *.swp

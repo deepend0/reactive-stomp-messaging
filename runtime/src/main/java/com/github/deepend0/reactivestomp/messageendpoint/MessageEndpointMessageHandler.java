@@ -35,21 +35,26 @@ public class MessageEndpointMessageHandler {
                     {
                         Multi<byte[]> result = messageEndpointMethodWrapper.call(serde, sendMessage.getPayload());
 
-                        // Fire and forget
-                        return Uni.createFrom().voidItem()
-                                .onItem().invoke(() -> result
-                                        .map(payload -> new SendMessage(
-                                                "server",
-                                                messageEndpointMethodWrapper.getMessageEndpoint().outboundDestination(),
-                                                payload))
-                                        .onItem()
-                                        .transformToUni(brokerInboundEmitter::send)
-                                        .merge()
-                                        .subscribe().with(
-                                            ignored -> {},
-                                            error -> LOGGER.error("Processing message endpoint failed", error)
-                                        )
-                                );
+                        if(messageEndpointMethodWrapper.getOutboundDestination() != null) {
+                            // Fire and forget
+                            return Uni.createFrom().voidItem()
+                                    .onItem().invoke(() -> result
+                                            .map(payload -> new SendMessage(
+                                                    "server",
+                                                    messageEndpointMethodWrapper.getOutboundDestination(),
+                                                    payload))
+                                            .onItem()
+                                            .transformToUni(brokerInboundEmitter::send)
+                                            .merge()
+                                            .subscribe().with(
+                                                    ignored -> {},
+                                                    error -> LOGGER.error("Processing message endpoint failed", error)
+                                            )
+                                    );
+                        } else {
+                            return Uni.createFrom().voidItem();
+                        }
+
                 })
                 .toList())
                 .andFailFast()

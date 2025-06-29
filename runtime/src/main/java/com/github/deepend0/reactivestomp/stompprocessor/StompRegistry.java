@@ -1,8 +1,8 @@
 package com.github.deepend0.reactivestomp.stompprocessor;
 
 import com.github.deepend0.reactivestomp.external.ExternalMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.BrokerMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.DisconnectMessage;
+import com.github.deepend0.reactivestomp.messaging.model.Message;
+import com.github.deepend0.reactivestomp.messaging.model.DisconnectMessage;
 import io.smallrye.mutiny.tuples.Tuple2;
 import io.smallrye.mutiny.tuples.Tuples;
 import io.smallrye.reactive.messaging.MutinyEmitter;
@@ -26,7 +26,7 @@ public class StompRegistry {
 
     protected final MutinyEmitter<ExternalMessage> serverOutboundEmitter;
 
-    private final MutinyEmitter<BrokerMessage> brokerInboundEmitter;
+    private final MutinyEmitter<Message> brokerInboundEmitter;
 
     private static final Logger LOG = LoggerFactory.getLogger(StompRegistry.class);
     private final ConcurrentHashMap<String, Long> lastClientActivities = new ConcurrentHashMap<>();
@@ -37,7 +37,7 @@ public class StompRegistry {
 
     public StompRegistry(Vertx vertx,
                          @Channel("serverOutbound") MutinyEmitter<ExternalMessage> serverOutboundEmitter,
-                         @Channel("brokerInbound") MutinyEmitter<BrokerMessage> brokerInboundEmitter) {
+                         @Channel("brokerInbound") MutinyEmitter<Message> brokerInboundEmitter) {
         this.vertx = vertx;
         this.serverOutboundEmitter = serverOutboundEmitter;
         this.brokerInboundEmitter = brokerInboundEmitter;

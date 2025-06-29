@@ -1,7 +1,7 @@
 package com.github.deepend0.reactivestomp.test.stompprocessor;
 
 import com.github.deepend0.reactivestomp.external.ExternalMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.*;
+import com.github.deepend0.reactivestomp.messaging.model.*;
 import com.github.deepend0.reactivestomp.stompprocessor.MessageIdGenerator;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -38,10 +38,10 @@ public class StompProcessorTest {
     private Multi<ExternalMessage> serverOutboundReceiver;
     @Inject
     @Channel("brokerInbound")
-    private Multi<BrokerMessage> brokerInboundReceiver;
+    private Multi<Message> brokerInboundReceiver;
     @Inject
     @Channel("brokerOutbound")
-    private MutinyEmitter<BrokerMessage> brokerOutboundEmitter;
+    private MutinyEmitter<Message> brokerOutboundEmitter;
     @InjectMock
     private MessageIdGenerator messageIdGenerator;
 
@@ -49,7 +49,7 @@ public class StompProcessorTest {
 
     private List<ExternalMessage> serverOutboundList = new ArrayList<>();
     private List<ExternalMessage> serverOutboundHeartbeats = new ArrayList<>();
-    private List<BrokerMessage> brokerInboundList = new ArrayList<>();
+    private List<Message> brokerInboundList = new ArrayList<>();
     private long timerId;
 
     @BeforeAll
@@ -123,10 +123,10 @@ public class StompProcessorTest {
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(receiptFrame, first.message());
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !brokerInboundList.isEmpty());
-        BrokerMessage brokerMessage = brokerInboundList.getFirst();
-        Assertions.assertEquals(sessionId, brokerMessage.getSubscriberId());
-        Assertions.assertInstanceOf(SubscribeMessage.class, brokerMessage);
-        Assertions.assertEquals("/topic/chat", ((SubscribeMessage) brokerMessage).getDestination());
+        Message message = brokerInboundList.getFirst();
+        Assertions.assertEquals(sessionId, message.getSubscriberId());
+        Assertions.assertInstanceOf(SubscribeMessage.class, message);
+        Assertions.assertEquals("/topic/chat", ((SubscribeMessage) message).getDestination());
     }
 
     @Test
@@ -141,11 +141,11 @@ public class StompProcessorTest {
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(receiptFrame, first.message());
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !brokerInboundList.isEmpty());
-        BrokerMessage brokerMessage = brokerInboundList.getFirst();
-        Assertions.assertEquals(sessionId, brokerMessage.getSubscriberId());
-        Assertions.assertInstanceOf(SendMessage.class, brokerMessage);
-        Assertions.assertEquals("/queue/messages", ((SendMessage) brokerMessage).getDestination());
-        Assertions.assertArrayEquals("Hello, this is a dummy message!".getBytes(StandardCharsets.UTF_8), ((SendMessage) brokerMessage).getPayload());
+        Message message = brokerInboundList.getFirst();
+        Assertions.assertEquals(sessionId, message.getSubscriberId());
+        Assertions.assertInstanceOf(SendMessage.class, message);
+        Assertions.assertEquals("/queue/messages", ((SendMessage) message).getDestination());
+        Assertions.assertArrayEquals("Hello, this is a dummy message!".getBytes(StandardCharsets.UTF_8), ((SendMessage) message).getPayload());
     }
 
     @Test
@@ -173,10 +173,10 @@ public class StompProcessorTest {
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(receiptFrame, first.message());
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !brokerInboundList.isEmpty());
-        BrokerMessage brokerMessage = brokerInboundList.getFirst();
-        Assertions.assertEquals(sessionId, brokerMessage.getSubscriberId());
-        Assertions.assertInstanceOf(UnsubscribeMessage.class, brokerMessage);
-        Assertions.assertEquals("/topic/chat", ((UnsubscribeMessage) brokerMessage).getDestination());
+        Message message = brokerInboundList.getFirst();
+        Assertions.assertEquals(sessionId, message.getSubscriberId());
+        Assertions.assertInstanceOf(UnsubscribeMessage.class, message);
+        Assertions.assertEquals("/topic/chat", ((UnsubscribeMessage) message).getDestination());
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> brokerInboundList.getFirst() instanceof UnsubscribeMessage);
     }
 
@@ -192,9 +192,9 @@ public class StompProcessorTest {
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(receiptFrame, first.message());
         Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !brokerInboundList.isEmpty());
-        BrokerMessage brokerMessage = brokerInboundList.getFirst();
-        Assertions.assertEquals(sessionId, brokerMessage.getSubscriberId());
-        Assertions.assertInstanceOf(DisconnectMessage.class, brokerMessage);
+        Message message = brokerInboundList.getFirst();
+        Assertions.assertEquals(sessionId, message.getSubscriberId());
+        Assertions.assertInstanceOf(DisconnectMessage.class, message);
         vertx.cancelTimer(timerId);
     }
 

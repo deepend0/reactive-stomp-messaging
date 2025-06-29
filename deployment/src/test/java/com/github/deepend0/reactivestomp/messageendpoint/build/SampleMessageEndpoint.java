@@ -1,6 +1,6 @@
 package com.github.deepend0.reactivestomp.messageendpoint.build;
 
-import com.github.deepend0.reactivestomp.messageendpoint.MessageEndpoint;
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpoint;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;

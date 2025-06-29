@@ -1,8 +1,8 @@
 package com.github.deepend0.reactivestomp.stompprocessor.framehandler;
 
 import com.github.deepend0.reactivestomp.external.ExternalMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.BrokerMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.SendMessage;
+import com.github.deepend0.reactivestomp.messaging.model.Message;
+import com.github.deepend0.reactivestomp.messaging.model.SendMessage;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.ext.stomp.Frame;
@@ -17,12 +17,12 @@ public class SendFrameHandler extends FrameHandler {
 
     @Inject
     @Channel("brokerInbound")
-    private MutinyEmitter<BrokerMessage> brokerInboundEmitter;
+    private MutinyEmitter<Message> brokerInboundEmitter;
 
     public SendFrameHandler() {
     }
 
-    public SendFrameHandler(MutinyEmitter<ExternalMessage> serverOutboundEmitter, MutinyEmitter<BrokerMessage> brokerInboundEmitter) {
+    public SendFrameHandler(MutinyEmitter<ExternalMessage> serverOutboundEmitter, MutinyEmitter<Message> brokerInboundEmitter) {
         super(serverOutboundEmitter);
         this.brokerInboundEmitter = brokerInboundEmitter;
     }

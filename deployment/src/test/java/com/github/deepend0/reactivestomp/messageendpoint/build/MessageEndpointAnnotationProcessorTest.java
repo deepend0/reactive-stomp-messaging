@@ -1,7 +1,7 @@
 package com.github.deepend0.reactivestomp.messageendpoint.build;
 
-import com.github.deepend0.reactivestomp.messageendpoint.MessageEndpointMethodWrapper;
-import com.github.deepend0.reactivestomp.messageendpoint.MessageEndpointRegistry;
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointMethodWrapper;
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointRegistry;
 import io.quarkus.test.QuarkusUnitTest;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;

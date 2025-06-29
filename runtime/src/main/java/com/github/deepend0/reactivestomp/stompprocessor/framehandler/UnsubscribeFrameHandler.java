@@ -1,8 +1,8 @@
 package com.github.deepend0.reactivestomp.stompprocessor.framehandler;
 
 import com.github.deepend0.reactivestomp.external.ExternalMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.BrokerMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.UnsubscribeMessage;
+import com.github.deepend0.reactivestomp.messaging.model.Message;
+import com.github.deepend0.reactivestomp.messaging.model.UnsubscribeMessage;
 import com.github.deepend0.reactivestomp.stompprocessor.StompRegistry;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.MutinyEmitter;
@@ -19,12 +19,12 @@ public class UnsubscribeFrameHandler extends FrameHandler {
 
     @Inject
     @Channel("brokerInbound")
-    private MutinyEmitter<BrokerMessage> brokerInboundEmitter;
+    private MutinyEmitter<Message> brokerInboundEmitter;
 
     public UnsubscribeFrameHandler() {
     }
 
-    public UnsubscribeFrameHandler(StompRegistry stompRegistry, MutinyEmitter<ExternalMessage> serverOutboundEmitter, MutinyEmitter<BrokerMessage> brokerInboundEmitter) {
+    public UnsubscribeFrameHandler(StompRegistry stompRegistry, MutinyEmitter<ExternalMessage> serverOutboundEmitter, MutinyEmitter<Message> brokerInboundEmitter) {
         super(serverOutboundEmitter);
         this.stompRegistry = stompRegistry;
         this.brokerInboundEmitter = brokerInboundEmitter;

@@ -1,8 +1,8 @@
 package com.github.deepend0.reactivestomp.stompprocessor.framehandler;
 
 import com.github.deepend0.reactivestomp.external.ExternalMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.BrokerMessage;
-import com.github.deepend0.reactivestomp.simplebroker.messagehandler.DisconnectMessage;
+import com.github.deepend0.reactivestomp.messaging.model.Message;
+import com.github.deepend0.reactivestomp.messaging.model.DisconnectMessage;
 import com.github.deepend0.reactivestomp.stompprocessor.StompRegistry;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.MutinyEmitter;
@@ -15,7 +15,7 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 public class DisconnectFrameHandler extends FrameHandler {
     @Inject
     @Channel("brokerInbound")
-    private MutinyEmitter<BrokerMessage> brokerInboundEmitter;
+    private MutinyEmitter<Message> brokerInboundEmitter;
 
     @Inject
     private StompRegistry stompRegistry;
@@ -23,7 +23,7 @@ public class DisconnectFrameHandler extends FrameHandler {
     public DisconnectFrameHandler() {
     }
 
-    public DisconnectFrameHandler(MutinyEmitter<ExternalMessage> serverOutboundEmitter, MutinyEmitter<BrokerMessage> brokerInboundEmitter, StompRegistry stompRegistry) {
+    public DisconnectFrameHandler(MutinyEmitter<ExternalMessage> serverOutboundEmitter, MutinyEmitter<Message> brokerInboundEmitter, StompRegistry stompRegistry) {
         super(serverOutboundEmitter);
         this.brokerInboundEmitter = brokerInboundEmitter;
         this.stompRegistry = stompRegistry;

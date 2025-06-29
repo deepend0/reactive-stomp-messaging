@@ -1,5 +1,6 @@
 package com.github.deepend0.reactivestomp.test.stompprocessor;
 
+import com.github.deepend0.reactivestomp.messaging.messagehandler.BrokerMessageHandler;
 import io.quarkus.test.junit.QuarkusTestProfile;
 
 import java.util.Map;
@@ -7,6 +8,6 @@ import java.util.Map;
 public class StompProcessorTestProfile implements QuarkusTestProfile {
     @Override
     public Map<String, String> getConfigOverrides() {
-        return Map.of("quarkus.arc.exclude-types", "com.github.deepend0.reactivestomp.simplebroker.messagehandler.BrokerMessageHandler");
+        return Map.of("quarkus.arc.exclude-types", BrokerMessageHandler.class.getName());
     }
 }

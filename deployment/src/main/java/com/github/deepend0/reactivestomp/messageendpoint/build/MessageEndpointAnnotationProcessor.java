@@ -1,8 +1,8 @@
 package com.github.deepend0.reactivestomp.messageendpoint.build;
 
-import com.github.deepend0.reactivestomp.messageendpoint.MessageEndpoint;
-import com.github.deepend0.reactivestomp.messageendpoint.MessageEndpointMethodWrapper;
-import com.github.deepend0.reactivestomp.messageendpoint.MessageEndpointRegistry;
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpoint;
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointMethodWrapper;
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointRegistry;
 import io.quarkus.arc.deployment.GeneratedBeanBuildItem;
 import io.quarkus.arc.deployment.GeneratedBeanGizmoAdaptor;
 import io.quarkus.deployment.annotations.BuildProducer;

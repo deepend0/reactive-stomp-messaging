@@ -37,8 +37,8 @@ public class StompProcessorTest {
     @Channel("serverOutbound")
     private Multi<ExternalMessage> serverOutboundReceiver;
     @Inject
-    @Channel("brokerInbound")
-    private Multi<Message> brokerInboundReceiver;
+    @Channel("messagingInbound")
+    private Multi<Message> messagingInboundReceiver;
     @Inject
     @Channel("brokerOutbound")
     private MutinyEmitter<Message> brokerOutboundEmitter;
@@ -49,7 +49,7 @@ public class StompProcessorTest {
 
     private List<ExternalMessage> serverOutboundList = new ArrayList<>();
     private List<ExternalMessage> serverOutboundHeartbeats = new ArrayList<>();
-    private List<Message> brokerInboundList = new ArrayList<>();
+    private List<Message> messagingInboundList = new ArrayList<>();
     private long timerId;
 
     @BeforeAll
@@ -61,13 +61,13 @@ public class StompProcessorTest {
                 serverOutboundList.add(externalMessage);
             }
         });
-        brokerInboundReceiver.subscribe().with(brokerInboundList::add);
+        messagingInboundReceiver.subscribe().with(messagingInboundList::add);
     }
 
     @AfterEach
     public void reset() {
         serverOutboundList.clear();
-        brokerInboundList.clear();
+        messagingInboundList.clear();
     }
 
     @Test
@@ -122,8 +122,8 @@ public class StompProcessorTest {
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(receiptFrame, first.message());
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !brokerInboundList.isEmpty());
-        Message message = brokerInboundList.getFirst();
+        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !messagingInboundList.isEmpty());
+        Message message = messagingInboundList.getFirst();
         Assertions.assertEquals(sessionId, message.getSubscriberId());
         Assertions.assertInstanceOf(SubscribeMessage.class, message);
         Assertions.assertEquals("/topic/chat", ((SubscribeMessage) message).getDestination());
@@ -140,8 +140,8 @@ public class StompProcessorTest {
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(receiptFrame, first.message());
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !brokerInboundList.isEmpty());
-        Message message = brokerInboundList.getFirst();
+        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !messagingInboundList.isEmpty());
+        Message message = messagingInboundList.getFirst();
         Assertions.assertEquals(sessionId, message.getSubscriberId());
         Assertions.assertInstanceOf(SendMessage.class, message);
         Assertions.assertEquals("/queue/messages", ((SendMessage) message).getDestination());
@@ -172,12 +172,12 @@ public class StompProcessorTest {
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(receiptFrame, first.message());
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !brokerInboundList.isEmpty());
-        Message message = brokerInboundList.getFirst();
+        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !messagingInboundList.isEmpty());
+        Message message = messagingInboundList.getFirst();
         Assertions.assertEquals(sessionId, message.getSubscriberId());
         Assertions.assertInstanceOf(UnsubscribeMessage.class, message);
         Assertions.assertEquals("/topic/chat", ((UnsubscribeMessage) message).getDestination());
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> brokerInboundList.getFirst() instanceof UnsubscribeMessage);
+        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> messagingInboundList.getFirst() instanceof UnsubscribeMessage);
     }
 
     @Test
@@ -191,8 +191,8 @@ public class StompProcessorTest {
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(receiptFrame, first.message());
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !brokerInboundList.isEmpty());
-        Message message = brokerInboundList.getFirst();
+        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !messagingInboundList.isEmpty());
+        Message message = messagingInboundList.getFirst();
         Assertions.assertEquals(sessionId, message.getSubscriberId());
         Assertions.assertInstanceOf(DisconnectMessage.class, message);
         vertx.cancelTimer(timerId);

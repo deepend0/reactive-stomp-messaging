@@ -20,16 +20,16 @@ public class SubscribeFrameHandler extends FrameHandler {
     private StompRegistry stompRegistry;
 
     @Inject
-    @Channel("brokerInbound")
-    private MutinyEmitter<Message> brokerInboundEmitter;
+    @Channel("messagingInbound")
+    private MutinyEmitter<Message> messagingInboundEmitter;
 
     public SubscribeFrameHandler() {
     }
 
-    public SubscribeFrameHandler(StompRegistry stompRegistry, MutinyEmitter<ExternalMessage> serverOutboundEmitter,MutinyEmitter<Message> brokerInboundEmitter) {
+    public SubscribeFrameHandler(StompRegistry stompRegistry, MutinyEmitter<ExternalMessage> serverOutboundEmitter,MutinyEmitter<Message> messagingInboundEmitter) {
         super(serverOutboundEmitter);
         this.stompRegistry = stompRegistry;
-        this.brokerInboundEmitter = brokerInboundEmitter;
+        this.messagingInboundEmitter = messagingInboundEmitter;
     }
 
 
@@ -48,7 +48,7 @@ public class SubscribeFrameHandler extends FrameHandler {
         }
 
         stompRegistry.addSessionSubscription(new StompRegistry.SessionSubscription(sessionId, subscriptionId, destination));
-        Uni<Void> uniSend = brokerInboundEmitter.send(new SubscribeMessage(sessionId, destination));
+        Uni<Void> uniSend = messagingInboundEmitter.send(new SubscribeMessage(sessionId, destination));
 
         Uni<Void> uniReceipt = handleReceipt(sessionId, frame);
 

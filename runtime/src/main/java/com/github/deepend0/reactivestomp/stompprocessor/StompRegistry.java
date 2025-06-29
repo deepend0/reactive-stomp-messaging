@@ -26,7 +26,7 @@ public class StompRegistry {
 
     protected final MutinyEmitter<ExternalMessage> serverOutboundEmitter;
 
-    private final MutinyEmitter<Message> brokerInboundEmitter;
+    private final MutinyEmitter<Message> messagingInboundEmitter;
 
     private static final Logger LOG = LoggerFactory.getLogger(StompRegistry.class);
     private final ConcurrentHashMap<String, Long> lastClientActivities = new ConcurrentHashMap<>();
@@ -37,10 +37,10 @@ public class StompRegistry {
 
     public StompRegistry(Vertx vertx,
                          @Channel("serverOutbound") MutinyEmitter<ExternalMessage> serverOutboundEmitter,
-                         @Channel("brokerInbound") MutinyEmitter<Message> brokerInboundEmitter) {
+                         @Channel("messagingInbound") MutinyEmitter<Message> messagingInboundEmitter) {
         this.vertx = vertx;
         this.serverOutboundEmitter = serverOutboundEmitter;
-        this.brokerInboundEmitter = brokerInboundEmitter;
+        this.messagingInboundEmitter = messagingInboundEmitter;
     }
 
     public void handleHeartbeat(String sessionId, int ping, int pong) {
@@ -59,7 +59,7 @@ public class StompRegistry {
                 if (delta > pong * 2) {
                     LOG.warn("Disconnecting client " + sessionId + " - no client activity in the last " + delta + " ms");
                     serverOutboundEmitter.sendAndForget(new ExternalMessage(sessionId, new byte[]{'\0'}));
-                    brokerInboundEmitter.sendAndForget(new DisconnectMessage(sessionId));
+                    messagingInboundEmitter.sendAndForget(new DisconnectMessage(sessionId));
                     disconnect(sessionId);
                 }
             });

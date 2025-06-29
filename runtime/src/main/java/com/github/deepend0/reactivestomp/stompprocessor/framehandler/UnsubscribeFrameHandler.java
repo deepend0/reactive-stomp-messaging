@@ -18,16 +18,16 @@ public class UnsubscribeFrameHandler extends FrameHandler {
     private StompRegistry stompRegistry;
 
     @Inject
-    @Channel("brokerInbound")
-    private MutinyEmitter<Message> brokerInboundEmitter;
+    @Channel("messagingInbound")
+    private MutinyEmitter<Message> messagingInboundEmitter;
 
     public UnsubscribeFrameHandler() {
     }
 
-    public UnsubscribeFrameHandler(StompRegistry stompRegistry, MutinyEmitter<ExternalMessage> serverOutboundEmitter, MutinyEmitter<Message> brokerInboundEmitter) {
+    public UnsubscribeFrameHandler(StompRegistry stompRegistry, MutinyEmitter<ExternalMessage> serverOutboundEmitter, MutinyEmitter<Message> messagingInboundEmitter) {
         super(serverOutboundEmitter);
         this.stompRegistry = stompRegistry;
-        this.brokerInboundEmitter = brokerInboundEmitter;
+        this.messagingInboundEmitter = messagingInboundEmitter;
     }
 
     @Override
@@ -38,7 +38,7 @@ public class UnsubscribeFrameHandler extends FrameHandler {
 
         StompRegistry.SessionSubscription sessionSubscription = stompRegistry.getSessionSubscriptionBySubscription(sessionId, subscriptionId);
         stompRegistry.deleteSessionSubscription(sessionSubscription);
-        Uni<Void> uniSend = brokerInboundEmitter.send(new UnsubscribeMessage(sessionId, sessionSubscription.getDestination()));
+        Uni<Void> uniSend = messagingInboundEmitter.send(new UnsubscribeMessage(sessionId, sessionSubscription.getDestination()));
 
         Uni<Void> uniReceipt = handleReceipt(sessionId, frame);
 

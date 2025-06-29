@@ -14,8 +14,8 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 @ApplicationScoped
 public class DisconnectFrameHandler extends FrameHandler {
     @Inject
-    @Channel("brokerInbound")
-    private MutinyEmitter<Message> brokerInboundEmitter;
+    @Channel("messagingInbound")
+    private MutinyEmitter<Message> messagingInboundEmitter;
 
     @Inject
     private StompRegistry stompRegistry;
@@ -23,9 +23,9 @@ public class DisconnectFrameHandler extends FrameHandler {
     public DisconnectFrameHandler() {
     }
 
-    public DisconnectFrameHandler(MutinyEmitter<ExternalMessage> serverOutboundEmitter, MutinyEmitter<Message> brokerInboundEmitter, StompRegistry stompRegistry) {
+    public DisconnectFrameHandler(MutinyEmitter<ExternalMessage> serverOutboundEmitter, MutinyEmitter<Message> messagingInboundEmitter, StompRegistry stompRegistry) {
         super(serverOutboundEmitter);
-        this.brokerInboundEmitter = brokerInboundEmitter;
+        this.messagingInboundEmitter = messagingInboundEmitter;
         this.stompRegistry = stompRegistry;
     }
 
@@ -33,7 +33,7 @@ public class DisconnectFrameHandler extends FrameHandler {
     public Uni<Void> handle(FrameHolder frameHolder) {
         String sessionId = frameHolder.sessionId();
         Frame frame = frameHolder.frame();
-        Uni<Void> uniSend = brokerInboundEmitter.send(new DisconnectMessage(sessionId));
+        Uni<Void> uniSend = messagingInboundEmitter.send(new DisconnectMessage(sessionId));
         Uni<Void> uniReceipt = handleReceipt(sessionId, frame);
         stompRegistry.disconnect(sessionId);
         return Uni.join().all(uniSend, uniReceipt).andFailFast().replaceWithVoid();

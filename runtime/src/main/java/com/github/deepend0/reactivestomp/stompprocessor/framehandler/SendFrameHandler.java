@@ -16,15 +16,15 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 public class SendFrameHandler extends FrameHandler {
 
     @Inject
-    @Channel("brokerInbound")
-    private MutinyEmitter<Message> brokerInboundEmitter;
+    @Channel("messagingInbound")
+    private MutinyEmitter<Message> messagingInboundEmitter;
 
     public SendFrameHandler() {
     }
 
-    public SendFrameHandler(MutinyEmitter<ExternalMessage> serverOutboundEmitter, MutinyEmitter<Message> brokerInboundEmitter) {
+    public SendFrameHandler(MutinyEmitter<ExternalMessage> serverOutboundEmitter, MutinyEmitter<Message> messagingInboundEmitter) {
         super(serverOutboundEmitter);
-        this.brokerInboundEmitter = brokerInboundEmitter;
+        this.messagingInboundEmitter = messagingInboundEmitter;
     }
 
     @Override
@@ -46,7 +46,7 @@ public class SendFrameHandler extends FrameHandler {
                     Headers.create(frame.getHeaders()), "No transaction support"))));
         }
 
-        Uni<Void> uniSend = brokerInboundEmitter.send(new SendMessage(sessionId, destination, frame.getBodyAsByteArray()));
+        Uni<Void> uniSend = messagingInboundEmitter.send(new SendMessage(sessionId, destination, frame.getBodyAsByteArray()));
 
         Uni<Void> uniReceipt = handleReceipt(sessionId, frame);
 

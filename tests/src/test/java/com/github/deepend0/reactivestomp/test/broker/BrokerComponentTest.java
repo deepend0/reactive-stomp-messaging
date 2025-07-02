@@ -212,7 +212,7 @@ public class BrokerComponentTest {
     }
 
     private long connectClient(String sessionId) {
-        final byte[] connectFrame = FrameTestUtils.connectFrame("www.example.com", "500,500");
+        final byte[] connectFrame = FrameTestUtils.connectFrame("www.example.com", "2000,2000");
         final byte[] connectedFrame = FrameTestUtils.connectedFrame(sessionId, "1000,1000");
         ExternalMessage externalMessage = new ExternalMessage(sessionId, connectFrame);
         serverInboundEmitter.sendAndForget(externalMessage);

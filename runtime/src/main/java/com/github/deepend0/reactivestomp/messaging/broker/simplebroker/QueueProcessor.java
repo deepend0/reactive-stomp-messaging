@@ -122,5 +122,4 @@ public class QueueProcessor implements Runnable {
             future = executorService.submit(this::processSubscribers);
         }
     }
-
 }

@@ -1,8 +1,9 @@
-package com.github.deepend0.reactivestomp.test.component;
+package com.github.deepend0.reactivestomp.test.broker;
 
-import com.github.deepend0.reactivestomp.external.ExternalMessage;
 import com.github.deepend0.reactivestomp.test.stompprocessor.FrameTestUtils;
+import com.github.deepend0.reactivestomp.websocket.ExternalMessage;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.core.Vertx;
@@ -26,6 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @QuarkusTest
+@TestProfile(BrokerComponentTestProfile.class)
 public class BrokerComponentTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(BrokerComponentTest.class);
 

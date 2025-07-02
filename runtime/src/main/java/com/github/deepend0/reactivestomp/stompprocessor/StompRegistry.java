@@ -1,6 +1,6 @@
 package com.github.deepend0.reactivestomp.stompprocessor;
 
-import com.github.deepend0.reactivestomp.external.ExternalMessage;
+import com.github.deepend0.reactivestomp.websocket.ExternalMessage;
 import com.github.deepend0.reactivestomp.messaging.model.Message;
 import com.github.deepend0.reactivestomp.messaging.model.DisconnectMessage;
 import io.smallrye.mutiny.tuples.Tuple2;

@@ -9,7 +9,7 @@ pluginManagement {
     }
 }
 
-rootProject.name='reactive-stomp-extension'
+rootProject.name='reactive-stomp-parent'
 
 include("reactive-stomp", "reactive-stomp-deployment", "tests")
 project(":reactive-stomp").projectDir = file("./runtime")

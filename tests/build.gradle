@@ -10,6 +10,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-core'
     implementation 'io.quarkus:quarkus-messaging'
     implementation 'io.quarkus:quarkus-jackson'
+    implementation 'io.quarkus:quarkus-websockets-next'
     implementation 'io.vertx:vertx-stomp:4.5.14'
 
     testImplementation 'io.quarkus:quarkus-junit5-mockito'

@@ -29,4 +29,8 @@ public class HeartbeatManager {
             connection.sendBinaryAndAwait(heartbeat);
         }
     }
+
+    public void reset() {
+        connections.clear();
+    }
 }

@@ -20,8 +20,9 @@ public class MessageEndpointAnnotationProcessorTest {
     @RegisterExtension
     static final QuarkusUnitTest quarkusUnitTest = new QuarkusUnitTest().withApplicationRoot((jar) -> jar
                     .addClass(SampleMessageEndpoint.class)
-                    .addClass(SampleMessageEndpointTwo.class))
-            .debugBytecode(true);
+                    .addClass(SampleMessageEndpointTwo.class)
+                    .addAsResource("application.yaml"))
+            .debugBytecode(false);
 
 
     @Inject
@@ -94,7 +95,6 @@ public class MessageEndpointAnnotationProcessorTest {
                 .stream()
                 .allMatch(messageEndpointMethodWrapper -> "inboundDestination5".equals(messageEndpointMethodWrapper.getInboundDestination())
                         && "outboundDestination6".equals(messageEndpointMethodWrapper.getOutboundDestination())));
-        List<Integer> result = new ArrayList<>();
         messageEndpointMethodWrappers.stream().map(messageEndpointMethodWrapper ->
                         (String) ((MessageEndpointMethodWrapper<String, String>) messageEndpointMethodWrapper).getMethodWrapper().apply("Jupiter"))
                 .toList().containsAll(List.of("Bonjour Mars", "Ciao Mars"));

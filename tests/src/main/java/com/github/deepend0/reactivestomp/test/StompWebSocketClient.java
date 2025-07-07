@@ -18,7 +18,7 @@ public class StompWebSocketClient {
     Instance<BasicWebSocketConnector> connector;
 
     public WebSocketClientConnection openAndConsume(String clientId, BiConsumer<WebSocketClientConnection, Buffer> consumer) {
-        URI uri = URI.create("ws://localhost:8081/ws/");
+        URI uri = URI.create("ws://localhost:8091/ws/");
         return connector
                 .get()
                 .baseUri(uri)

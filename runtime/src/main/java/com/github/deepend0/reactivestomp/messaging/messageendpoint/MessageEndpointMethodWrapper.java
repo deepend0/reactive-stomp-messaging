@@ -54,7 +54,7 @@ public class MessageEndpointMethodWrapper<I, O> {
             Multi<O> multiResult = switch (result) {
                 case Uni<?> uni -> ((Uni<O>) uni).toMulti();
                 case Multi<?> multi -> (Multi<O>) multi;
-                default -> throw new IllegalStateException("Method ref should return Uni or Multi");
+                default -> Multi.createFrom().item((O)result);
             };
             return multiResult.onItem().transformToUni(o -> {
                 try {

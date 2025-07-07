@@ -1,6 +1,6 @@
 package com.github.deepend0.reactivestomp.stompprocessor.framehandler;
 
-import com.github.deepend0.reactivestomp.external.ExternalMessage;
+import com.github.deepend0.reactivestomp.websocket.ExternalMessage;
 import com.github.deepend0.reactivestomp.stompprocessor.StompProcessorImpl;
 import com.github.deepend0.reactivestomp.stompprocessor.StompRegistry;
 import io.smallrye.mutiny.Uni;
@@ -11,8 +11,10 @@ import io.vertx.ext.stomp.Frames;
 import io.vertx.ext.stomp.impl.FrameParser;
 import io.vertx.ext.stomp.utils.Headers;
 import io.vertx.ext.stomp.utils.Server;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +26,11 @@ public class ConnectFrameHandler extends FrameHandler {
     @Inject
     private StompRegistry stompRegistry;
 
+    @ConfigProperty(name = "reactive-stomp.heartbeat")
+    private int [] heartbeatPeriods;
+
+    private Frame.Heartbeat serverHeartbeat;
+
     public ConnectFrameHandler() {
     }
 
@@ -32,7 +39,10 @@ public class ConnectFrameHandler extends FrameHandler {
         this.stompRegistry = stompRegistry;
     }
 
-    private final Frame.Heartbeat serverHeartbeat = new Frame.Heartbeat(1000, 1000);
+    @PostConstruct
+    public void postConstruct(){
+        serverHeartbeat = new Frame.Heartbeat(heartbeatPeriods[0], heartbeatPeriods[1]);
+    }
 
     @Override
     public Uni<Void> handle(FrameHolder frameHolder) {

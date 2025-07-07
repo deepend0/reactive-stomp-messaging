@@ -1,6 +1,6 @@
 package com.github.deepend0.reactivestomp.stompprocessor.framehandler;
 
-import com.github.deepend0.reactivestomp.external.ExternalMessage;
+import com.github.deepend0.reactivestomp.websocket.ExternalMessage;
 import com.github.deepend0.reactivestomp.messaging.model.Message;
 import com.github.deepend0.reactivestomp.messaging.model.SubscribeMessage;
 import com.github.deepend0.reactivestomp.stompprocessor.StompRegistry;

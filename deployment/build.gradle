@@ -6,6 +6,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-config-yaml-deployment'
     implementation 'io.quarkus:quarkus-messaging-deployment'
     implementation 'io.quarkus:quarkus-jackson-deployment'
+    implementation 'io.quarkus:quarkus-websockets-next-deployment'
 
     testImplementation 'io.quarkus:quarkus-junit5-internal'
 }

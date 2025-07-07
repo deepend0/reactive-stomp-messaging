@@ -11,7 +11,6 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 @ApplicationScoped
 public class MessagingMessageHandler {
@@ -21,7 +20,7 @@ public class MessagingMessageHandler {
 
     private final MutinyEmitter<SendMessage> messageEndpointInboundEmitter;
 
-    public MessagingMessageHandler(@ConfigProperty(name = "reactive-stomp.messaging.messageEndpointPrefixes") Optional<List<String>> messageEndpointPrefixes,
+    public MessagingMessageHandler(@ConfigProperty(name = "reactive-stomp.messaging.message-endpoint.paths") Optional<List<String>> messageEndpointPrefixes,
                                    @Channel("brokerInbound") MutinyEmitter<Message> brokerInboundEmitter,
                                    @Channel("messageEndpointInbound") MutinyEmitter<SendMessage> messageEndpointInboundEmitter) {
         this.messageEndpointPrefixes = messageEndpointPrefixes;

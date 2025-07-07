@@ -1,4 +1,4 @@
-package com.github.deepend0.reactivestomp.test.simplebroker;
+package com.github.deepend0.reactivestomp.test.messaging.broker.simplebroker;
 
 import com.github.deepend0.reactivestomp.messaging.broker.simplebroker.SimpleBroker;
 import com.github.deepend0.reactivestomp.messaging.broker.simplebroker.Subscriber;

@@ -11,7 +11,7 @@ import java.util.stream.IntStream;
 @ApplicationScoped
 public class SampleMessageEndpoint {
     @MessageEndpoint(inboundDestination = "/messageEndpoint/intSeries", outboundDestination = "/topic/intSeries")
-    public Multi<Integer> intSeries(Integer value) {
+    public Multi<Integer> nextIntegers(Integer value) {
         return Multi.createFrom().items(IntStream.range(value + 1, value + 11).boxed());
     }
 

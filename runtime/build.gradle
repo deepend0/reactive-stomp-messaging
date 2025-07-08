@@ -14,5 +14,5 @@ dependencies {
 }
 
 quarkusExtension {
-    deploymentModule "reactive-stomp-deployment"
+    deploymentModule "reactive-stomp-messaging-deployment"
 }

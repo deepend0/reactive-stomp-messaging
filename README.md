@@ -1,58 +1,34 @@
-# reactive-stomp
+# reactive-stomp-messaging
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+This project is a Quarkus Extension for STOMP Messaging. Stil under development.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+STOMP (Simple Text Oriented Messaging Protocol) is useful in light-weight messaging with brokers. See [STOMP specification](https://stomp.github.io/stomp-specification-1.2.html). It is also quite convenient for socket connections in server-client architecture with message endpoints on servers. 
 
-## Running the application in dev mode
+A client can send messages to destinations via broker to other clients. But when client sends a message to a destination under a particular path, it will be handled by server. Also servers response will be redirected into another broker destination.
 
-You can run your application in dev mode that enables live coding using:
+This extension will provide message endpoints like this:
+```
+   @MessageEndpoint(inboundDestination = "/messageEndpoint/intSeries", outboundDestination = "/topic/intSeries")
+    public Multi<Integer> nextIntegers(Integer value) {
+        return Multi.createFrom().items(IntStream.range(value + 1, value + 11).boxed());
+    }
 
-```shell script
-./gradlew quarkusDev
+    @MessageEndpoint(inboundDestination = "/messageEndpoint/helloAsync", outboundDestination = "/topic/helloAsync")
+    public Uni<String> greetingUni(String name) {
+        return Uni.createFrom().item("Hello " + name);
+    }
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+The project is based on Quarkus reactive messaging and also internally works fully reactively.
 
-## Packaging and running the application
+When finished, it will include ( [+]: already implemented, [/] partially implemented, [-] missing ):
 
-The application can be packaged using:
+Stomp server [/] :
+- Stomp processor [+]
+- Simple Broker [+]
+- Message Endpoints [+]
+- External Brokers [-]
+- Websocket connections [+]
 
-```shell script
-./gradlew build
-```
-
-It produces the `quarkus-run.jar` file in the `build/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `build/quarkus-app/lib/` directory.
-
-The application is now runnable using `java -jar build/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-
-```shell script
-./gradlew build -Dquarkus.package.jar.type=uber-jar
-```
-
-The application, packaged as an _über-jar_, is now runnable using `java -jar build/*-runner.jar`.
-
-## Creating a native executable
-
-You can create a native executable using:
-
-```shell script
-./gradlew build -Dquarkus.native.enabled=true
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
-
-```shell script
-./gradlew build -Dquarkus.native.enabled=true -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./build/reactive-stomp-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/gradle-tooling>.
-
-## Related Guides
-
-- Messaging ([guide](https://quarkus.io/guides/messaging)): Produce and consume messages and implement event driven and data streaming applications
+Stomp Client [-] :
+- Websocket connections

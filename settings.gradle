@@ -9,8 +9,8 @@ pluginManagement {
     }
 }
 
-rootProject.name='reactive-stomp-parent'
+rootProject.name='reactive-stomp-messaging-parent'
 
-include("reactive-stomp", "reactive-stomp-deployment", "tests")
-project(":reactive-stomp").projectDir = file("./runtime")
-project(":reactive-stomp-deployment").projectDir = file("./deployment")
+include("reactive-stomp-messaging", "reactive-stomp-messaging-deployment", "tests")
+project(":reactive-stomp-messaging").projectDir = file("./runtime")
+project(":reactive-stomp-messaging-deployment").projectDir = file("./deployment")

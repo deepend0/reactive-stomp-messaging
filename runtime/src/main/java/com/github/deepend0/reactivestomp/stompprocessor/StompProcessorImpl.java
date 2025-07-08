@@ -101,7 +101,7 @@ public class StompProcessorImpl implements StompProcessor {
     @Override
     @Incoming("brokerOutbound")
     public Uni<Void> processToClient(SendMessage sendMessage) {
-        String subscriptionId = stompRegistry.getSessionSubscriptionByDestination(sendMessage.getSubscriberId(), sendMessage.getDestination()).getSubscriptionId();
+        String subscriptionId = stompRegistry.getSessionSubscriptionByDestination(sendMessage.getSubscriberId(), sendMessage.getDestination()).subscriptionId();
         Map<String, String> headers = new HashMap<>();
         headers.put("subscription",subscriptionId);
         headers.put("messageId", messageIdGenerator.generate());

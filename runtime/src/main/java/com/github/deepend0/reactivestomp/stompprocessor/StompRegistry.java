@@ -1,8 +1,9 @@
 package com.github.deepend0.reactivestomp.stompprocessor;
 
-import com.github.deepend0.reactivestomp.websocket.ExternalMessage;
-import com.github.deepend0.reactivestomp.messaging.model.Message;
 import com.github.deepend0.reactivestomp.messaging.model.DisconnectMessage;
+import com.github.deepend0.reactivestomp.messaging.model.Message;
+import com.github.deepend0.reactivestomp.websocket.ExternalMessage;
+import io.quarkus.vertx.ConsumeEvent;
 import io.smallrye.mutiny.tuples.Tuple2;
 import io.smallrye.mutiny.tuples.Tuples;
 import io.smallrye.reactive.messaging.MutinyEmitter;
@@ -10,14 +11,13 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.stomp.impl.FrameParser;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.reactive.messaging.Channel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import org.eclipse.microprofile.reactive.messaging.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class StompRegistry {
@@ -41,6 +41,26 @@ public class StompRegistry {
         this.vertx = vertx;
         this.serverOutboundEmitter = serverOutboundEmitter;
         this.messagingInboundEmitter = messagingInboundEmitter;
+    }
+    
+    @ConsumeEvent(value = StompProcessor.CONNECT_EVENT_DESTINATION)
+    public void handleConnectEvent(ConnectMessage connectMessage) {
+        handleHeartbeat(connectMessage.sessionId(), connectMessage.ping(), connectMessage.pong());
+    }
+
+    @ConsumeEvent(value = StompProcessor.DISCONNECT_EVENT_DESTINATION)
+    public void handleDisconnectEvent(String sessionId) {
+        disconnect(sessionId);
+    }
+
+    @ConsumeEvent(value = StompProcessor.SUBSCRIBE_EVENT_DESTINATION)
+    public void handleSubscribeEvent(SessionSubscription sessionSubscription) {
+        addSessionSubscription(sessionSubscription);
+    }
+    
+    @ConsumeEvent(value = StompProcessor.UNSUBSCRIBE_EVENT_DESTINATION)
+    public void handleUnsubscribeEvent(SessionSubscription sessionSubscription) {
+        deleteSessionSubscription(sessionSubscription);
     }
 
     public void handleHeartbeat(String sessionId, int ping, int pong) {
@@ -90,13 +110,13 @@ public class StompRegistry {
     }
 
     public void addSessionSubscription(SessionSubscription sessionSubscription) {
-        sessionSubscriptionsBySubscription.put(Tuples.tuple2(List.of(sessionSubscription.getSessionId(), sessionSubscription.getSubscriptionId())), sessionSubscription);
-        sessionSubscriptionsByDestination.put(Tuples.tuple2(List.of(sessionSubscription.getSessionId(), sessionSubscription.getDestination())), sessionSubscription);
+        sessionSubscriptionsBySubscription.put(Tuples.tuple2(List.of(sessionSubscription.sessionId(), sessionSubscription.subscriptionId())), sessionSubscription);
+        sessionSubscriptionsByDestination.put(Tuples.tuple2(List.of(sessionSubscription.sessionId(), sessionSubscription.destination())), sessionSubscription);
     }
 
     public void deleteSessionSubscription(SessionSubscription sessionSubscription) {
-        sessionSubscriptionsBySubscription.remove(Tuples.tuple2(List.of(sessionSubscription.getSessionId(), sessionSubscription.getSubscriptionId())));
-        sessionSubscriptionsByDestination.remove(Tuples.tuple2(List.of(sessionSubscription.getSessionId(), sessionSubscription.getDestination())));
+        sessionSubscriptionsBySubscription.remove(Tuples.tuple2(List.of(sessionSubscription.sessionId(), sessionSubscription.subscriptionId())));
+        sessionSubscriptionsByDestination.remove(Tuples.tuple2(List.of(sessionSubscription.sessionId(), sessionSubscription.destination())));
     }
 
     public SessionSubscription getSessionSubscriptionBySubscription(String sessionId, String subscriptionId) {
@@ -107,50 +127,20 @@ public class StompRegistry {
         return sessionSubscriptionsByDestination.get(Tuples.tuple2(List.of(sessionId, destination)));
     }
 
-    public static class SessionSubscription {
-        private String sessionId;
-        private String subscriptionId;
-        private String destination;
-
-        public SessionSubscription(String sessionId, String subscriptionId, String destination) {
-            this.sessionId = sessionId;
-            this.subscriptionId = subscriptionId;
-            this.destination = destination;
-        }
-
-        public String getSessionId() {
-            return sessionId;
-        }
-
-        public void setSessionId(String sessionId) {
-            this.sessionId = sessionId;
-        }
-
-        public String getSubscriptionId() {
-            return subscriptionId;
-        }
-
-        public void setSubscriptionId(String subscriptionId) {
-            this.subscriptionId = subscriptionId;
-        }
-
-        public String getDestination() {
-            return destination;
-        }
-
-        public void setDestination(String destination) {
-            this.destination = destination;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (!(o instanceof SessionSubscription that)) return false;
-            return Objects.equals(sessionId, that.sessionId) && Objects.equals(subscriptionId, that.subscriptionId);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(sessionId, subscriptionId);
-        }
+    public record ConnectMessage(String sessionId, int ping, int pong) {
     }
+
+    public record SessionSubscription(String sessionId, String subscriptionId, String destination) {
+
+        @Override
+            public boolean equals(Object o) {
+                if (!(o instanceof SessionSubscription that)) return false;
+                return Objects.equals(sessionId, that.sessionId) && Objects.equals(subscriptionId, that.subscriptionId);
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(sessionId, subscriptionId);
+            }
+        }
 }

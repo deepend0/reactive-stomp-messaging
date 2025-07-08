@@ -1,8 +1,9 @@
 package com.github.deepend0.reactivestomp.stompprocessor.framehandler;
 
-import com.github.deepend0.reactivestomp.websocket.ExternalMessage;
+import com.github.deepend0.reactivestomp.stompprocessor.StompProcessor;
 import com.github.deepend0.reactivestomp.stompprocessor.StompProcessorImpl;
 import com.github.deepend0.reactivestomp.stompprocessor.StompRegistry;
+import com.github.deepend0.reactivestomp.websocket.ExternalMessage;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.ext.stomp.Command;
@@ -11,32 +12,31 @@ import io.vertx.ext.stomp.Frames;
 import io.vertx.ext.stomp.impl.FrameParser;
 import io.vertx.ext.stomp.utils.Headers;
 import io.vertx.ext.stomp.utils.Server;
+import io.vertx.mutiny.core.eventbus.EventBus;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
 public class ConnectFrameHandler extends FrameHandler {
 
-    @Inject
-    private StompRegistry stompRegistry;
-
     @ConfigProperty(name = "reactive-stomp.heartbeat")
     private int [] heartbeatPeriods;
+
+    @Inject
+    private EventBus eventBus;
 
     private Frame.Heartbeat serverHeartbeat;
 
     public ConnectFrameHandler() {
     }
 
-    public ConnectFrameHandler(MutinyEmitter<ExternalMessage> serverOutboundEmitter, StompRegistry stompRegistry) {
+    public ConnectFrameHandler(MutinyEmitter<ExternalMessage> serverOutboundEmitter) {
         super(serverOutboundEmitter);
-        this.stompRegistry = stompRegistry;
     }
 
     @PostConstruct
@@ -81,7 +81,9 @@ public class ConnectFrameHandler extends FrameHandler {
                 Frame.SESSION, sessionId,
                 Frame.HEARTBEAT, new Frame.Heartbeat(ping, pong).toString()), null))));
 
-        stompRegistry.handleHeartbeat(sessionId, ping, pong);
+        StompRegistry.ConnectMessage connectMessage = new StompRegistry.ConnectMessage(sessionId, ping, pong);
+        eventBus.publish(StompProcessor.CONNECT_EVENT_DESTINATION, connectMessage);
+
         return uniSend;
     }
 

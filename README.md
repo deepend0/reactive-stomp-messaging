@@ -1,4 +1,4 @@
-# reactive-stomp-server
+# reactive-stomp-messaging
 
 This project is a Quarkus Extension for STOMP Messaging. Stil under development.
 
@@ -25,10 +25,10 @@ When finished, it will include ( [+]: already implemented, [/] partially impleme
 
 Stomp server [/] :
 - Stomp processor [+]
-- Simple Broker [+]
-- Message Endpoints [+]
-- External Brokers [-]
 - Websocket connections [+]
+- Message Endpoints [+]
+- Simple Broker [+]
+- External Brokers Relay [-]
 
 Stomp Client [-] :
 - Websocket connections

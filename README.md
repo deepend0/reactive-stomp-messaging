@@ -1,4 +1,4 @@
-# reactive-stomp-messaging
+# reactive-stomp-server
 
 This project is a Quarkus Extension for STOMP Messaging. Stil under development.
 

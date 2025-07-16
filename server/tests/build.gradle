@@ -1,19 +1,19 @@
 plugins {
-    id 'io.quarkus' version "${quarkusPluginVersion}"
+    id "io.quarkus" version "${quarkusPluginVersion}"
 }
 
 dependencies {
     implementation platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
     implementation project(":reactive-stomp-server")
-    implementation 'io.quarkus:quarkus-config-yaml'
-    implementation 'io.quarkus:quarkus-arc'
-    implementation 'io.quarkus:quarkus-core'
-    implementation 'io.quarkus:quarkus-messaging'
-    implementation 'io.quarkus:quarkus-jackson'
-    implementation 'io.quarkus:quarkus-websockets-next'
-    implementation 'io.quarkus:quarkus-scheduler'
-    implementation 'io.vertx:vertx-stomp:4.5.14'
+    implementation "io.quarkus:quarkus-config-yaml"
+    implementation "io.quarkus:quarkus-arc"
+    implementation "io.quarkus:quarkus-core"
+    implementation "io.quarkus:quarkus-messaging"
+    implementation "io.quarkus:quarkus-jackson"
+    implementation "io.quarkus:quarkus-websockets-next"
+    implementation "io.quarkus:quarkus-scheduler"
+    implementation "io.vertx:vertx-stomp:4.5.14"
 
-    testImplementation 'io.quarkus:quarkus-junit5-mockito'
-    testImplementation 'org.awaitility:awaitility:4.3.0'
+    testImplementation "io.quarkus:quarkus-junit5-mockito"
+    testImplementation "org.awaitility:awaitility:4.3.0"
 }

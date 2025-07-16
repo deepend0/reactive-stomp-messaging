@@ -1,8 +1,8 @@
 subprojects {
-    apply plugin: 'java-library'
+    apply plugin: "java-library"
 
-    group 'com.github.deepend0'
-    version '1.0-SNAPSHOT'
+    group "com.github.deepend0"
+    version "1.0-SNAPSHOT"
 
     repositories {
         mavenCentral()
@@ -15,12 +15,12 @@ subprojects {
     }
 
     compileJava {
-        options.encoding = 'UTF-8'
-        options.compilerArgs << '-parameters'
+        options.encoding = "UTF-8"
+        options.compilerArgs << "-parameters"
     }
 
     compileTestJava {
-        options.encoding = 'UTF-8'
+        options.encoding = "UTF-8"
     }
 
     reporting.baseDirectory = file("reports")

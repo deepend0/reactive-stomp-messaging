@@ -1,12 +1,12 @@
 package com.github.deepend0.reactivestomp.messaging.broker.simplebroker;
 
-import com.github.deepend0.reactivestomp.messaging.broker.MessageBroker;
+import com.github.deepend0.reactivestomp.messaging.broker.MessageBrokerClient;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
 import java.util.concurrent.CompletableFuture;
 
-public class SimpleBroker implements MessageBroker {
+public class SimpleBroker implements MessageBrokerClient, Runnable {
 
     private final QueueRegistry queueRegistry;
     private final QueueProcessor queueProcessor;
@@ -32,11 +32,11 @@ public class SimpleBroker implements MessageBroker {
         TopicSubscription topicSubscription = new TopicSubscription(topic, subscriber);
         topicSubscription.setOffset(topicQueue.queueSize() - 1);
         queueProcessor.addTopicSubscription(topicSubscription);
-        var multi = Multi.createFrom().emitter(multiEmitter -> topicSubscription.setEmitter(multiEmitter));
-        return multi;
+        return Multi.createFrom()
+                .emitter(multiEmitter -> topicSubscription.setEmitter(multiEmitter))
+                .onCancellation().call(() -> unsubscribe(subscriber, topic));
     }
 
-    @Override
     public Uni<Void> unsubscribe(Subscriber subscriber, String topic) {
         var topicQueue = queueRegistry.getQueue(topic);
         topicQueue.removeSubscriber(subscriber);
@@ -45,8 +45,7 @@ public class SimpleBroker implements MessageBroker {
         return Uni.createFrom().voidItem();
     }
 
-    @Override
-    public Uni<Void> unsubscribeAll(Subscriber subscriber) {
+    public Uni<Void> disconnect(Subscriber subscriber) {
         queueProcessor.removeSubscriptionsOfSubscriber(subscriber);
         return Uni.createFrom().voidItem();
     }
@@ -56,12 +55,10 @@ public class SimpleBroker implements MessageBroker {
         queueProcessor.run();
     }
 
-    @Override
     public void stop() {
         queueProcessor.stop();
     }
 
-    @Override
     public void reset() {
         queueProcessor.reset();
         queueRegistry.reset();

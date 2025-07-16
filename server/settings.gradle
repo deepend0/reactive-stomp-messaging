@@ -5,11 +5,11 @@ pluginManagement {
         mavenLocal()
     }
     plugins {
-        id 'io.quarkus.extension' version "${quarkusPluginVersion}"
+        id "io.quarkus.extension" version "${quarkusPluginVersion}"
     }
 }
 
-rootProject.name='reactive-stomp-server-parent'
+rootProject.name="reactive-stomp-server-parent"
 
 include("reactive-stomp-server", "reactive-stomp-server-deployment", "tests")
 project(":reactive-stomp-server").projectDir = file("./runtime")

@@ -4,16 +4,8 @@ import com.github.deepend0.reactivestomp.messaging.broker.simplebroker.Subscribe
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
-public interface MessageBroker extends Runnable {
+public interface MessageBrokerClient {
     Uni<Void> send(String destination, Object message);
 
-    Multi<?> subscribe(Subscriber subscriber, String topic);
-
-    Uni<Void> unsubscribe(Subscriber subscriber, String topic);
-
-    Uni<Void> unsubscribeAll(Subscriber subscriber);
-
-    void stop();
-
-    void reset();
+    Multi<?> subscribe(Subscriber subscriber, String destination);
 }

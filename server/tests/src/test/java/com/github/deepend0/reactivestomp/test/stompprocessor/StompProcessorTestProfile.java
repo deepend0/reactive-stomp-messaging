@@ -1,5 +1,7 @@
 package com.github.deepend0.reactivestomp.test.stompprocessor;
 
+import com.github.deepend0.reactivestomp.messaging.messagehandler.BrokerMessageHandler;
+import com.github.deepend0.reactivestomp.messaging.messagehandler.MessageEndpointMessageHandler;
 import com.github.deepend0.reactivestomp.messaging.messagehandler.MessagingMessageHandler;
 import com.github.deepend0.reactivestomp.test.integrationtest.messagechannel.MessageChannelTestConfig;
 import com.github.deepend0.reactivestomp.websocket.StompWebSocketServer;
@@ -15,6 +17,8 @@ public class StompProcessorTestProfile implements QuarkusTestProfile {
         "quarkus.arc.exclude-types",
         String.join(
             ",",
+            BrokerMessageHandler.class.getName(),
+            MessageEndpointMessageHandler.class.getName(),
             MessagingMessageHandler.class.getName(),
             StompWebSocketServer.class.getName(),
             ConnectionRegistry.class.getName(),

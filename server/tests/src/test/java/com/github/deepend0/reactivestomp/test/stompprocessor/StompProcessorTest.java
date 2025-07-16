@@ -28,6 +28,8 @@ import java.util.List;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class StompProcessorTest {
+    public static final Duration AWAIT_AT_MOST = Duration.ofMillis(3000);;
+    public static final Duration AWAIT_POLL_INTERVAL = Duration.ofMillis(100);
     @Inject
     private Vertx vertx;
     @Inject
@@ -77,7 +79,7 @@ public class StompProcessorTest {
         final byte [] errorFrame = FrameTestUtils.errorFrame("REJECTED", "text/plain", "Active connection doesn't exist.");
         ExternalMessage externalMessage = new ExternalMessage(sessionId, subscribeFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(1000)).until(() -> !serverOutboundList.isEmpty());
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(errorFrame, first.message());
@@ -91,11 +93,11 @@ public class StompProcessorTest {
         ExternalMessage externalMessage = new ExternalMessage(sessionId, connectFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
         timerId = vertx.setPeriodic(1000, l -> serverInboundEmitter.sendAndForget(new ExternalMessage(sessionId, "\n".getBytes(StandardCharsets.UTF_8))));
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !serverOutboundList.isEmpty());
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(connectedFrame, first.message());
-        Awaitility.await().atMost(Duration.ofMillis(6000)).pollInterval(Duration.ofMillis(300)).until(() -> serverOutboundHeartbeats.size() > 2);
+        Awaitility.await().atMost(Duration.ofMillis(6000)).pollInterval(AWAIT_POLL_INTERVAL).until(() -> serverOutboundHeartbeats.size() > 2);
     }
 
     @Test
@@ -105,7 +107,7 @@ public class StompProcessorTest {
         final byte [] errorFrame = FrameTestUtils.errorFrame("REJECTED", "text/plain", "Active connection already exists.");
         ExternalMessage externalMessage = new ExternalMessage(sessionId, connectFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !serverOutboundList.isEmpty());
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(errorFrame, first.message());
@@ -118,11 +120,11 @@ public class StompProcessorTest {
         final byte [] receiptFrame = FrameTestUtils.receiptFrame("12345");
         ExternalMessage externalMessage = new ExternalMessage(sessionId, subscribeFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !serverOutboundList.isEmpty());
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(receiptFrame, first.message());
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !messagingInboundList.isEmpty());
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !messagingInboundList.isEmpty());
         Message message = messagingInboundList.getFirst();
         Assertions.assertEquals(sessionId, message.getSubscriberId());
         Assertions.assertInstanceOf(SubscribeMessage.class, message);
@@ -136,11 +138,11 @@ public class StompProcessorTest {
         final byte [] receiptFrame = FrameTestUtils.receiptFrame("12346");
         ExternalMessage externalMessage = new ExternalMessage(sessionId, sendFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !serverOutboundList.isEmpty());
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(receiptFrame, first.message());
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !messagingInboundList.isEmpty());
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !messagingInboundList.isEmpty());
         Message message = messagingInboundList.getFirst();
         Assertions.assertEquals(sessionId, message.getSubscriberId());
         Assertions.assertInstanceOf(SendMessage.class, message);
@@ -155,7 +157,7 @@ public class StompProcessorTest {
         Mockito.when(messageIdGenerator.generate()).thenReturn("abcde");
         SendMessage sendMessage = new SendMessage(sessionId, "/topic/chat", "Hello, this is a dummy message!".getBytes(StandardCharsets.UTF_8));
         brokerOutboundEmitter.sendAndForget(sendMessage);
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !serverOutboundList.isEmpty());
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(messageFrame, first.message());
@@ -168,16 +170,16 @@ public class StompProcessorTest {
         final byte [] receiptFrame = FrameTestUtils.receiptFrame("54321");
         ExternalMessage externalMessage = new ExternalMessage(sessionId, unsubscribeFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !serverOutboundList.isEmpty());
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(receiptFrame, first.message());
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !messagingInboundList.isEmpty());
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !messagingInboundList.isEmpty());
         Message message = messagingInboundList.getFirst();
         Assertions.assertEquals(sessionId, message.getSubscriberId());
         Assertions.assertInstanceOf(UnsubscribeMessage.class, message);
         Assertions.assertEquals("/topic/chat", ((UnsubscribeMessage) message).getDestination());
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> messagingInboundList.getFirst() instanceof UnsubscribeMessage);
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> messagingInboundList.getFirst() instanceof UnsubscribeMessage);
     }
 
     @Test
@@ -187,11 +189,11 @@ public class StompProcessorTest {
         final byte [] receiptFrame = FrameTestUtils.receiptFrame("12347");
         ExternalMessage externalMessage = new ExternalMessage(sessionId, disconnectFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !serverOutboundList.isEmpty());
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(receiptFrame, first.message());
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(300)).until(() -> !messagingInboundList.isEmpty());
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !messagingInboundList.isEmpty());
         Message message = messagingInboundList.getFirst();
         Assertions.assertEquals(sessionId, message.getSubscriberId());
         Assertions.assertInstanceOf(DisconnectMessage.class, message);
@@ -205,7 +207,7 @@ public class StompProcessorTest {
         final byte [] errorFrame = FrameTestUtils.errorFrame("REJECTED", "text/plain", "Active connection doesn't exist.");
         ExternalMessage externalMessage = new ExternalMessage(sessionId, subscribeFrame);
         serverInboundEmitter.sendAndForget(externalMessage);
-        Awaitility.await().atMost(Duration.ofMillis(3000)).pollInterval(Duration.ofMillis(1000)).until(() -> !serverOutboundList.isEmpty());
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !serverOutboundList.isEmpty());
         ExternalMessage first = serverOutboundList.getFirst();
         Assertions.assertEquals(sessionId, first.sessionId());
         Assertions.assertArrayEquals(errorFrame, first.message());

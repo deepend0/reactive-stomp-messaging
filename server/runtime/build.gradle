@@ -7,11 +7,10 @@ dependencies {
     implementation "io.quarkus:quarkus-config-yaml"
     implementation "io.quarkus:quarkus-arc"
     implementation "io.quarkus:quarkus-core"
-    implementation "io.quarkus:quarkus-messaging-kafka"
     implementation "io.quarkus:quarkus-messaging"
     implementation "io.quarkus:quarkus-jackson"
     implementation "io.quarkus:quarkus-websockets-next"
-    implementation "io.vertx:vertx-stomp:4.5.14"
+    implementation "io.vertx:vertx-stomp:${vertxVersion}"
 }
 
 quarkusExtension {

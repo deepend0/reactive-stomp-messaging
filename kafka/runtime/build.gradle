@@ -1,0 +1,15 @@
+plugins {
+    id "io.quarkus.extension" version "${quarkusPluginVersion}"
+}
+
+dependencies {
+    implementation platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    implementation project(":reactive-stomp-server")
+    implementation "io.quarkus:quarkus-arc"
+    implementation "io.quarkus:quarkus-core"
+    implementation "io.vertx:vertx-kafka-client:${vertxVersion}"
+}
+
+quarkusExtension {
+    deploymentModule "reactive-stomp-kafka-deployment"
+}

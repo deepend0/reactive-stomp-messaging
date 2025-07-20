@@ -8,16 +8,17 @@ import io.vertx.core.Vertx;
 import io.vertx.kafka.client.consumer.KafkaConsumer;
 import io.vertx.kafka.client.producer.KafkaProducer;
 import io.vertx.kafka.client.producer.KafkaProducerRecord;
-import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
-@ApplicationScoped
 public class KafkaClientAdaptor implements MessageBrokerClient {
 
     private final Vertx vertx;
@@ -47,12 +48,12 @@ public class KafkaClientAdaptor implements MessageBrokerClient {
 
     @Override
     public Uni<Void> send(String destination, Object message) {
-        return Uni.createFrom().completionStage(kafkaProducer.send(KafkaProducerRecord.create(destination, (byte []) message)).toCompletionStage()).replaceWithVoid();
+        return Uni.createFrom().completionStage(kafkaProducer.send(KafkaProducerRecord.create(destination.replace("/", "."), (byte []) message)).toCompletionStage()).replaceWithVoid();
     }
 
     public Multi<?> subscribe(Subscriber subscriber, String destination) {
         KafkaConsumer<String, byte []> kafkaConsumer = KafkaConsumer.create(vertx, consumerProperties);
-        kafkaConsumer.subscribe(Set.of(destination));
+        kafkaConsumer.subscribe(Set.of(destination.replace("/", ".")));
         return Multi.createFrom().emitter(multiEmitter -> {
             kafkaConsumer.handler(kafkaConsumerRecord -> multiEmitter.emit(kafkaConsumerRecord.record().value()));
             kafkaConsumer.exceptionHandler(multiEmitter::fail);

@@ -1,6 +1,6 @@
 package com.github.deepend0.reactivestomp.test.integrationtest.messagechannel;
 
-import com.github.deepend0.reactivestomp.test.stompprocessor.FrameTestUtils;
+import com.github.deepend0.reactivestomp.test.FrameTestUtils;
 import com.github.deepend0.reactivestomp.websocket.ExternalMessage;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.core.Vertx;

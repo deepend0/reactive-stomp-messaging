@@ -12,7 +12,7 @@ dependencies {
     implementation "io.quarkus:quarkus-jackson"
     implementation "io.quarkus:quarkus-websockets-next"
     implementation "io.quarkus:quarkus-scheduler"
-    implementation "io.vertx:vertx-stomp:4.5.14"
+    implementation "io.vertx:vertx-stomp:${vertxVersion}"
 
     testImplementation "io.quarkus:quarkus-junit5-mockito"
     testImplementation "org.awaitility:awaitility:4.3.0"

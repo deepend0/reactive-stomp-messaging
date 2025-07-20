@@ -1,7 +1,6 @@
 package com.github.deepend0.reactivestomp.messaging.messagehandler;
 
 import com.github.deepend0.reactivestomp.messaging.broker.MessageBrokerClient;
-import com.github.deepend0.reactivestomp.messaging.broker.simplebroker.SimpleBroker;
 import com.github.deepend0.reactivestomp.messaging.broker.simplebroker.Subscriber;
 import com.github.deepend0.reactivestomp.messaging.model.*;
 import io.smallrye.mutiny.Uni;
@@ -13,10 +12,8 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,8 +24,8 @@ public class BrokerMessageHandler {
     private final MutinyEmitter<Message> brokerOutboundEmitter;
     private final Map<String, Map<String, Cancellable>> subscriptions = new ConcurrentHashMap<>();
 
-    public BrokerMessageHandler(SimpleBroker messageBroker, @Channel("brokerOutbound") MutinyEmitter<Message> brokerOutboundEmitter) {
-        this.messageBrokerClient = messageBroker;
+    public BrokerMessageHandler(MessageBrokerClient messageBrokerClient, @Channel("brokerOutbound") MutinyEmitter<Message> brokerOutboundEmitter) {
+        this.messageBrokerClient = messageBrokerClient;
         this.brokerOutboundEmitter = brokerOutboundEmitter;
     }
 

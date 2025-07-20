@@ -8,7 +8,11 @@ dependencies {
     implementation "io.quarkus:quarkus-config-yaml"
     implementation "io.quarkus:quarkus-arc"
     implementation "io.quarkus:quarkus-core"
+    implementation "io.quarkus:quarkus-jackson"
+    implementation "io.quarkus:quarkus-websockets-next"
+    implementation "io.vertx:vertx-stomp:${vertxVersion}"
 
+    testImplementation project(":reactive-stomp-server-tests")
     testImplementation "io.quarkus:quarkus-junit5-mockito"
     testImplementation "org.awaitility:awaitility:4.3.0"
 }

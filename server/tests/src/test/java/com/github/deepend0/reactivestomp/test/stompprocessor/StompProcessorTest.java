@@ -1,5 +1,6 @@
 package com.github.deepend0.reactivestomp.test.stompprocessor;
 
+import com.github.deepend0.reactivestomp.test.FrameTestUtils;
 import com.github.deepend0.reactivestomp.websocket.ExternalMessage;
 import com.github.deepend0.reactivestomp.messaging.model.*;
 import com.github.deepend0.reactivestomp.stompprocessor.MessageIdGenerator;

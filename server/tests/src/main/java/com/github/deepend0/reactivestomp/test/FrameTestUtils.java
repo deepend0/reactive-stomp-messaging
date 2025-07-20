@@ -1,4 +1,4 @@
-package com.github.deepend0.reactivestomp.test.stompprocessor;
+package com.github.deepend0.reactivestomp.test;
 
 import java.nio.charset.StandardCharsets;
 

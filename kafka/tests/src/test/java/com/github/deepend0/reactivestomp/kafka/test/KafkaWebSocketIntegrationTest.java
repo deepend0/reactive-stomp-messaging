@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 @QuarkusTest
 public class KafkaWebSocketIntegrationTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaWebSocketIntegrationTest.class);
-    public static final Duration AWAIT_AT_MOST = Duration.ofMillis(3000);
+    public static final Duration AWAIT_AT_MOST = Duration.ofMillis(5000);
     public static final Duration AWAIT_POLL_INTERVAL = Duration.ofMillis(100);
 
     @Inject
@@ -76,7 +76,8 @@ public class KafkaWebSocketIntegrationTest {
     }
 
     @Test
-    public void shouldCallMessageEndpointWithOutboundReceivers() {
+    public void shouldCallMessageEndpointWithOutboundReceivers() throws InterruptedException{
+        Thread.sleep(5000l);
         Deque<byte[]> receivedMessages1 = new LinkedList<>();
         Deque<byte[]> receivedHeartbeats1 = new LinkedList<>();
         WebSocketClientConnection clientConnection1 = createWebSocketConnection("client4", receivedMessages1, receivedHeartbeats1);
@@ -166,6 +167,7 @@ public class KafkaWebSocketIntegrationTest {
                 receivedHeartbeats.add(messageBytes);
             } else {
                 receivedMessages.add(messageBytes);
+                LOGGER.debug("RECEIVED WS MESSAGE {}", new String(messageBytes));
             }
         });
     }

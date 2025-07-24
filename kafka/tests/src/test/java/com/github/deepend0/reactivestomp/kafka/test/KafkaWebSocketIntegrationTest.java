@@ -77,7 +77,6 @@ public class KafkaWebSocketIntegrationTest {
 
     @Test
     public void shouldCallMessageEndpointWithOutboundReceivers() throws InterruptedException{
-        Thread.sleep(5000l);
         Deque<byte[]> receivedMessages1 = new LinkedList<>();
         Deque<byte[]> receivedHeartbeats1 = new LinkedList<>();
         WebSocketClientConnection clientConnection1 = createWebSocketConnection("client4", receivedMessages1, receivedHeartbeats1);
@@ -113,11 +112,74 @@ public class KafkaWebSocketIntegrationTest {
         disconnectClient(clientConnection3, receivedMessages3, "2007");
     }
 
+    @Test
+    public void shouldChangeSubscribedTopics() {
+        Deque<byte[]> receivedMessages1 = new LinkedList<>();
+        Deque<byte[]> receivedHeartbeats1 = new LinkedList<>();
+        WebSocketClientConnection clientConnection1 = createWebSocketConnection("client7", receivedMessages1, receivedHeartbeats1);
+        Deque<byte[]> receivedMessages2 = new LinkedList<>();
+        Deque<byte[]> receivedHeartbeats2 = new LinkedList<>();
+        WebSocketClientConnection clientConnection2 = createWebSocketConnection("client8", receivedMessages2, receivedHeartbeats2);
+        Deque<byte[]> receivedMessages3 = new LinkedList<>();
+        Deque<byte[]> receivedHeartbeats3 = new LinkedList<>();
+        WebSocketClientConnection clientConnection3 = createWebSocketConnection("client9", receivedMessages3, receivedHeartbeats3);
+
+        connectClient(clientConnection1, receivedMessages1, receivedHeartbeats1);
+        connectClient(clientConnection2, receivedMessages2, receivedHeartbeats2);
+        connectClient(clientConnection3, receivedMessages3, receivedHeartbeats3);
+
+        String subscription1 = "sub6";
+        String subscription2 = "sub7";
+        String subscription3 = "sub8";
+
+        String destination = "/topic/chat2";
+        String message = "Hello World!";
+
+        subscribeClient(clientConnection1, receivedMessages1, subscription1, destination, "3001");
+        subscribeClient(clientConnection2, receivedMessages2, subscription2, destination, "3002");
+        subscribeClient(clientConnection3, receivedMessages3, subscription3, destination, "3003");
+
+        unsubscribeClient(clientConnection1, receivedMessages1, subscription1, "3004");
+        unsubscribeClient(clientConnection2, receivedMessages2, subscription2, "3005");
+        unsubscribeClient(clientConnection3, receivedMessages3, subscription3, "3006");
+
+        CompletableFuture<Void> cf1 = CompletableFuture.runAsync(()-> sendMessage(clientConnection1, receivedMessages1, destination, message, "3007"));
+        CompletableFuture<Void> cf2 = CompletableFuture.runAsync(()->receiveMessageNot(receivedMessages1, subscription1, destination, message));
+        CompletableFuture<Void> cf3 = CompletableFuture.runAsync(()->receiveMessageNot(receivedMessages2, subscription2, destination, message));
+        CompletableFuture<Void> cf4 = CompletableFuture.runAsync(()->receiveMessageNot(receivedMessages3, subscription3, destination, message));
+        CompletableFuture.allOf(cf1, cf2, cf3, cf4).join();
+
+        String subscription4 = "sub8";
+        String subscription5 = "sub9";
+        String subscription6 = "sub10";
+
+        String destination2 = "/topic/chat3";
+        String message2 = "Hello Uranus!";
+
+        subscribeClient(clientConnection1, receivedMessages1, subscription4, destination2, "3008");
+        subscribeClient(clientConnection2, receivedMessages2, subscription5, destination2, "3009");
+        subscribeClient(clientConnection3, receivedMessages3, subscription6, destination2, "3010");
+
+        CompletableFuture<Void> cf5 = CompletableFuture.runAsync(()-> sendMessage(clientConnection1, receivedMessages1, destination2, message2, "3011"));
+        CompletableFuture<Void> cf6 = CompletableFuture.runAsync(()->receiveMessage(receivedMessages1, subscription4, destination2, message2));
+        CompletableFuture<Void> cf7 = CompletableFuture.runAsync(()->receiveMessage(receivedMessages2, subscription5, destination2, message2));
+        CompletableFuture<Void> cf8 = CompletableFuture.runAsync(()->receiveMessage(receivedMessages3, subscription6, destination2, message2));
+        CompletableFuture.allOf(cf5, cf6, cf7, cf8).join();
+
+        disconnectClient(clientConnection1, receivedMessages1, "3012");
+        disconnectClient(clientConnection2, receivedMessages2, "3013");
+        disconnectClient(clientConnection3, receivedMessages3, "3014");
+    }
+
     private void receiveMessage(Deque<byte[]> receivedMessages, String subId, String destination, String message) {
         final byte [] messageFrame = FrameTestUtils.messageFrame(destination, ".*", subId, message);
         Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !receivedMessages.isEmpty()
                 && Pattern.compile(new String(messageFrame)).matcher(new String(receivedMessages.peek())).matches());
         receivedMessages.removeFirst();
+    }
+
+    private void receiveMessageNot(Deque<byte[]> receivedMessages, String subId, String destination, String message) {
+        Awaitility.await().timeout(AWAIT_AT_MOST).until(() -> receivedMessages.isEmpty());
     }
 
     private void sendMessage(WebSocketClientConnection connection, Deque<byte[]> receivedMessages, String destination, String message, String receipt) {
@@ -131,6 +193,15 @@ public class KafkaWebSocketIntegrationTest {
 
     private void subscribeClient(WebSocketClientConnection connection, Deque<byte[]> receivedMessages, String subId, String destination, String receipt) {
         final byte [] subscribeFrame = FrameTestUtils.subscribeFrame(subId,  destination, receipt);
+        final byte [] receiptFrame = FrameTestUtils.receiptFrame(receipt);
+        connection.sendBinaryAndAwait(subscribeFrame);
+        Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !receivedMessages.isEmpty());
+        byte [] first = receivedMessages.removeFirst();
+        Assertions.assertArrayEquals(receiptFrame, first);
+    }
+
+    private void unsubscribeClient(WebSocketClientConnection connection, Deque<byte[]> receivedMessages, String subId, String receipt) {
+        final byte [] subscribeFrame = FrameTestUtils.unsubscribeFrame(subId, receipt);
         final byte [] receiptFrame = FrameTestUtils.receiptFrame(receipt);
         connection.sendBinaryAndAwait(subscribeFrame);
         Awaitility.await().atMost(AWAIT_AT_MOST).pollInterval(AWAIT_POLL_INTERVAL).until(() -> !receivedMessages.isEmpty());

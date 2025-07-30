@@ -35,3 +35,7 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     depends_on:
       - zoo1
+
+networks:
+  default:
+    name: kafka_tests

@@ -11,10 +11,21 @@ pluginManagement {
 
 rootProject.name="reactive-stomp-messaging"
 
-include("reactive-stomp-server", "reactive-stomp-server-deployment", "reactive-stomp-server-tests", "reactive-stomp-kafka", "reactive-stomp-kafka-deployment", "reactive-stomp-kafka-tests")
+include("reactive-stomp-server",
+        "reactive-stomp-server-deployment",
+        "reactive-stomp-server-tests",
+        "reactive-stomp-kafka",
+        "reactive-stomp-kafka-deployment",
+        "reactive-stomp-kafka-tests",
+        "reactive-stomp-amqp",
+        "reactive-stomp-amqp-deployment",
+        "reactive-stomp-amqp-tests")
 project(":reactive-stomp-server").projectDir = file("server/runtime")
 project(":reactive-stomp-server-deployment").projectDir = file("server/deployment")
 project(":reactive-stomp-server-tests").projectDir = file("server/tests")
 project(":reactive-stomp-kafka").projectDir = file("kafka/runtime")
 project(":reactive-stomp-kafka-deployment").projectDir = file("kafka/deployment")
 project(":reactive-stomp-kafka-tests").projectDir = file("kafka/tests")
+project(":reactive-stomp-amqp").projectDir = file("amqp/runtime")
+project(":reactive-stomp-amqp-deployment").projectDir = file("amqp/deployment")
+project(":reactive-stomp-amqp-tests").projectDir = file("amqp/tests")

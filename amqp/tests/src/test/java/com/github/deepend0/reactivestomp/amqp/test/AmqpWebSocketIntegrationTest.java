@@ -1,4 +1,4 @@
-package com.github.deepend0.reactivestomp.kafka.test;
+package com.github.deepend0.reactivestomp.amqp.test;
 
 import com.github.deepend0.reactivestomp.test.FrameTestUtils;
 import com.github.deepend0.reactivestomp.test.HeartbeatManager;
@@ -24,8 +24,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @QuarkusTest
-public class KafkaWebSocketIntegrationTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaWebSocketIntegrationTest.class);
+public class AmqpWebSocketIntegrationTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AmqpWebSocketIntegrationTest.class);
     public static final Duration AWAIT_AT_MOST = Duration.ofMillis(5000);
     public static final Duration AWAIT_POLL_INTERVAL = Duration.ofMillis(100);
 

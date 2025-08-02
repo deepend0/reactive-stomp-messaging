@@ -4,6 +4,7 @@ import com.github.deepend0.reactivestomp.messaging.broker.MessageBrokerClient;
 import com.github.deepend0.reactivestomp.messaging.broker.simplebroker.Subscriber;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.subscription.Cancellable;
 import io.smallrye.mutiny.subscription.MultiEmitter;
 import io.vertx.amqp.*;
 import io.vertx.core.Vertx;
@@ -20,6 +21,7 @@ public class AmqpClientAdaptor implements MessageBrokerClient {
     private final Uni<AmqpConnection> amqpConnectionUni;
     private final Map<String, Uni<AmqpSender>> senders = new ConcurrentHashMap<>();
     private final Map<String, Uni<AmqpReceiver>> receivers = new ConcurrentHashMap<>();
+    private final Map<String, Cancellable> receiversCancellable = new ConcurrentHashMap<>();
     private final Map<String, List<MultiEmitter<? super byte[]>>> emitters = new ConcurrentHashMap<>();
 
     public AmqpClientAdaptor(Vertx vertx, AmqpClientOptions amqpClientOptions) {
@@ -44,7 +46,15 @@ public class AmqpClientAdaptor implements MessageBrokerClient {
     public Multi<?> subscribe(Subscriber subscriber, String destination) {
         Multi<?> multi = Multi.createFrom().<byte[]>emitter(multiEmitter -> {
             emitters.computeIfAbsent(destination, k-> new CopyOnWriteArrayList<>()).add(multiEmitter);
-            multiEmitter.onTermination(()->emitters.get(destination).remove(multiEmitter));
+            multiEmitter.onTermination(()-> {
+                emitters.get(destination).remove(multiEmitter);
+                if (emitters.get(destination).isEmpty()) {
+                    emitters.remove(destination);
+                    receiversCancellable.get(destination).cancel();
+                    receiversCancellable.remove(destination);
+                    receivers.remove(destination);
+                }
+            });
         });
 
         receivers.computeIfAbsent(destination, k -> {
@@ -53,7 +63,7 @@ public class AmqpClientAdaptor implements MessageBrokerClient {
                             .map(amqpReceiver -> amqpReceiver.handler(amqpMessage ->
                                     emitters.get(destination).forEach(multiEmitter -> multiEmitter.emit(amqpMessage.bodyAsBinary().getBytes()))))
                             .memoize().indefinitely());
-                amqpReceiverUni.subscribe().with(ignored->{});
+                receiversCancellable.put(destination, amqpReceiverUni.subscribe().with(ignored->{}));
                 return amqpReceiverUni;
             });
 

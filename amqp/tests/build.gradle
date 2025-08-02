@@ -12,7 +12,7 @@ dependencies {
     implementation "io.quarkus:quarkus-websockets-next"
     implementation "io.vertx:vertx-stomp:${vertxVersion}"
 
-    testImplementation project(":reactive-stomp-server-tests")
+    testImplementation project(":reactive-stomp-base-tests")
     testImplementation "io.quarkus:quarkus-junit5-mockito"
     testImplementation "org.awaitility:awaitility:4.3.0"
 }

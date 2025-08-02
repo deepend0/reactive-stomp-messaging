@@ -4,7 +4,7 @@ plugins {
 
 dependencies {
     implementation platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
-    implementation project(":reactive-stomp-server")
+    implementation project(":reactive-stomp-base")
     implementation "io.quarkus:quarkus-arc"
     implementation "io.quarkus:quarkus-core"
     implementation "io.vertx:vertx-kafka-client:${vertxVersion}"

@@ -70,9 +70,9 @@ public class AmqpWebSocketIntegrationTest {
         CompletableFuture<Void> cf4 = CompletableFuture.runAsync(()->receiveMessage(receivedMessages3, subscription3, destination, message));
         CompletableFuture.allOf(cf1, cf2, cf3, cf4).join();
 
-        String subscription4 = "sub11";
-        String subscription5 = "sub12";
-        String subscription6 = "sub13";
+        String subscription4 = "sub13";
+        String subscription5 = "sub14";
+        String subscription6 = "sub15";
 
         String destination2 = "/topic/chat2";
         String message2 = "Hello Moon!";
@@ -93,7 +93,7 @@ public class AmqpWebSocketIntegrationTest {
     }
 
     @Test
-    public void shouldCallMessageEndpointWithOutboundReceivers() throws InterruptedException{
+    public void shouldCallMessageEndpointWithOutboundReceivers() {
         Deque<byte[]> receivedMessages1 = new LinkedList<>();
         Deque<byte[]> receivedHeartbeats1 = new LinkedList<>();
         WebSocketClientConnection clientConnection1 = createWebSocketConnection("client4", receivedMessages1, receivedHeartbeats1);
@@ -145,9 +145,9 @@ public class AmqpWebSocketIntegrationTest {
         connectClient(clientConnection2, receivedMessages2, receivedHeartbeats2);
         connectClient(clientConnection3, receivedMessages3, receivedHeartbeats3);
 
-        String subscription1 = "sub6";
-        String subscription2 = "sub7";
-        String subscription3 = "sub8";
+        String subscription1 = "sub7";
+        String subscription2 = "sub8";
+        String subscription3 = "sub9";
 
         String destination = "/topic/chat3";
         String message = "Hello World!";
@@ -166,9 +166,9 @@ public class AmqpWebSocketIntegrationTest {
         CompletableFuture<Void> cf4 = CompletableFuture.runAsync(()->receiveMessageNot(receivedMessages3, subscription3, destination, message));
         CompletableFuture.allOf(cf1, cf2, cf3, cf4).join();
 
-        String subscription4 = "sub8";
-        String subscription5 = "sub9";
-        String subscription6 = "sub10";
+        String subscription4 = "sub10";
+        String subscription5 = "sub11";
+        String subscription6 = "sub12";
 
         String destination2 = "/topic/chat4";
         String message2 = "Hello Uranus!";

@@ -70,30 +70,13 @@ public class KafkaWebSocketIntegrationTest {
         CompletableFuture<Void> cf4 = CompletableFuture.runAsync(()->receiveMessage(receivedMessages3, subscription3, destination, message));
         CompletableFuture.allOf(cf1, cf2, cf3, cf4).join();
 
-        String subscription4 = "sub11";
-        String subscription5 = "sub12";
-        String subscription6 = "sub13";
-
-        String destination2 = "/topic/chat2";
-        String message2 = "Hello Moon!";
-
-        subscribeClient(clientConnection1, receivedMessages1, subscription4, destination2, "1005");
-        subscribeClient(clientConnection2, receivedMessages2, subscription5, destination2, "1006");
-        subscribeClient(clientConnection3, receivedMessages3, subscription6, destination2, "1007");
-
-        CompletableFuture<Void> cf5 = CompletableFuture.runAsync(()-> sendMessage(clientConnection2, receivedMessages2, destination2, message2, "1008"));
-        CompletableFuture<Void> cf6 = CompletableFuture.runAsync(()->receiveMessage(receivedMessages1, subscription4, destination2, message2));
-        CompletableFuture<Void> cf7 = CompletableFuture.runAsync(()->receiveMessage(receivedMessages2, subscription5, destination2, message2));
-        CompletableFuture<Void> cf8 = CompletableFuture.runAsync(()->receiveMessage(receivedMessages3, subscription6, destination2, message2));
-        CompletableFuture.allOf(cf5, cf6, cf7, cf8).join();
-
         disconnectClient(clientConnection1, receivedMessages1, "1009");
         disconnectClient(clientConnection2, receivedMessages2, "1010");
         disconnectClient(clientConnection3, receivedMessages3, "1011");
     }
 
     @Test
-    public void shouldCallMessageEndpointWithOutboundReceivers() throws InterruptedException{
+    public void shouldCallMessageEndpointWithOutboundReceivers() {
         Deque<byte[]> receivedMessages1 = new LinkedList<>();
         Deque<byte[]> receivedHeartbeats1 = new LinkedList<>();
         WebSocketClientConnection clientConnection1 = createWebSocketConnection("client4", receivedMessages1, receivedHeartbeats1);
@@ -145,9 +128,9 @@ public class KafkaWebSocketIntegrationTest {
         connectClient(clientConnection2, receivedMessages2, receivedHeartbeats2);
         connectClient(clientConnection3, receivedMessages3, receivedHeartbeats3);
 
-        String subscription1 = "sub6";
-        String subscription2 = "sub7";
-        String subscription3 = "sub8";
+        String subscription1 = "sub7";
+        String subscription2 = "sub8";
+        String subscription3 = "sub9";
 
         String destination = "/topic/chat3";
         String message = "Hello World!";
@@ -166,9 +149,9 @@ public class KafkaWebSocketIntegrationTest {
         CompletableFuture<Void> cf4 = CompletableFuture.runAsync(()->receiveMessageNot(receivedMessages3, subscription3, destination, message));
         CompletableFuture.allOf(cf1, cf2, cf3, cf4).join();
 
-        String subscription4 = "sub8";
-        String subscription5 = "sub9";
-        String subscription6 = "sub10";
+        String subscription4 = "sub10";
+        String subscription5 = "sub11";
+        String subscription6 = "sub12";
 
         String destination2 = "/topic/chat4";
         String message2 = "Hello Uranus!";

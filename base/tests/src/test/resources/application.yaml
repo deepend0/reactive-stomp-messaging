@@ -1,0 +1,10 @@
+quarkus:
+  http:
+    test-port: 8091
+  devservices:
+    enabled: false
+
+reactive-stomp:
+  messaging:
+    message-endpoint:
+      paths: /messageEndpoint

@@ -1,0 +1,7 @@
+name: "Reactive STOMP For Quarkus"
+metadata:
+  keywords:
+    - "reactive-messaging"
+    - "stomp"
+    - "amqp"
+  status: "stable"

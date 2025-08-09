@@ -1,0 +1,31 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        mavenLocal()
+    }
+    plugins {
+        id "io.quarkus.extension" version "${quarkusPluginVersion}"
+    }
+}
+
+rootProject.name="reactive-stomp-messaging"
+
+include("reactive-stomp-base",
+        "reactive-stomp-base-deployment",
+        "reactive-stomp-base-tests",
+        "reactive-stomp-kafka",
+        "reactive-stomp-kafka-deployment",
+        "reactive-stomp-kafka-tests",
+        "reactive-stomp-amqp",
+        "reactive-stomp-amqp-deployment",
+        "reactive-stomp-amqp-tests")
+project(":reactive-stomp-base").projectDir = file("base/runtime")
+project(":reactive-stomp-base-deployment").projectDir = file("base/deployment")
+project(":reactive-stomp-base-tests").projectDir = file("base/tests")
+project(":reactive-stomp-kafka").projectDir = file("kafka/runtime")
+project(":reactive-stomp-kafka-deployment").projectDir = file("kafka/deployment")
+project(":reactive-stomp-kafka-tests").projectDir = file("kafka/tests")
+project(":reactive-stomp-amqp").projectDir = file("amqp/runtime")
+project(":reactive-stomp-amqp-deployment").projectDir = file("amqp/deployment")
+project(":reactive-stomp-amqp-tests").projectDir = file("amqp/tests")

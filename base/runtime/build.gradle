@@ -1,0 +1,18 @@
+plugins {
+    id "io.quarkus.extension" version "${quarkusPluginVersion}"
+}
+
+dependencies {
+    implementation platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    implementation "io.quarkus:quarkus-config-yaml"
+    implementation "io.quarkus:quarkus-arc"
+    implementation "io.quarkus:quarkus-core"
+    implementation "io.quarkus:quarkus-messaging"
+    implementation "io.quarkus:quarkus-jackson"
+    implementation "io.quarkus:quarkus-websockets-next"
+    implementation "io.vertx:vertx-stomp:${vertxVersion}"
+}
+
+quarkusExtension {
+    deploymentModule "reactive-stomp-base-deployment"
+}

@@ -41,6 +41,7 @@ public class SubscribeFrameHandler extends FrameHandler {
 
         String subscriptionId = frame.getHeader(Frame.ID);
         String destination = frame.getHeader(Frame.DESTINATION);
+        String ack = frame.getHeader(Frame.ACK);
         if (destination == null || sessionId == null) {
             return serverOutboundEmitter.send(new ExternalMessage(sessionId, FrameUtils.frameToByteArray(Frames.createErrorFrame(
                     "Invalid subscription",
@@ -50,8 +51,7 @@ public class SubscribeFrameHandler extends FrameHandler {
         SubscribeMessage subscribeMessage = new SubscribeMessage(sessionId, destination);
         Uni<Void> uniSend = messagingInboundEmitter.send(subscribeMessage);
         Uni<Void> uniReceipt = handleReceipt(sessionId, frame);
-        eventBus.publish(StompProcessor.SUBSCRIBE_EVENT_DESTINATION, new StompRegistry.SessionSubscription(sessionId, subscriptionId, destination));
-
+        eventBus.publish(StompProcessor.SUBSCRIBE_EVENT_DESTINATION, new StompRegistry.SessionSubscription(sessionId, subscriptionId, destination, ack != null ? ack : "auto"));
         return Uni.join().all(uniSend, uniReceipt).andFailFast().replaceWithVoid();
     }
 }

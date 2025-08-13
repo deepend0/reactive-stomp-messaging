@@ -9,6 +9,9 @@ public interface StompProcessor {
     String DISCONNECT_EVENT_DESTINATION = "stomp-processor.disconnect";
     String SUBSCRIBE_EVENT_DESTINATION = "stomp-processor.subscribe";
     String UNSUBSCRIBE_EVENT_DESTINATION = "stomp-processor.unsubscribe";
+    String MESSAGE_SEND_DESTINATION = "stomp-processor.send";
+    String MESSAGE_ACK_DESTINATION = "stomp-processor.ack";
+    String MESSAGE_NACK_DESTINATION = "stomp-processor.nack";
 
     Uni<Void> processFromClient(ExternalMessage externalMessage);
 

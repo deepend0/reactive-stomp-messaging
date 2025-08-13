@@ -3,3 +3,6 @@ quarkus:
     test-port: 8091
   devservices:
     enabled: false
+reactive-stomp:
+  stomp:
+    ackPeriod: 1000

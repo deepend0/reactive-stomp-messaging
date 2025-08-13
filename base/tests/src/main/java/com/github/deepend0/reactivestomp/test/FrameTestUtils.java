@@ -42,6 +42,18 @@ public class FrameTestUtils {
         return toBytes(String.format(frame, id, destination, receipt));
     }
 
+    public static byte[] subscribeWithAckFrame(String id, String destination, String ack, String receipt) {
+        String frame = """
+            SUBSCRIBE
+            id:%s
+            destination:%s
+            ack:%s
+            receipt:%s
+
+            \u0000""";
+        return toBytes(String.format(frame, id, destination, ack, receipt));
+    }
+
     public static byte[] unsubscribeFrame(String id, String receipt) {
         String frame = """
             UNSUBSCRIBE
@@ -72,6 +84,15 @@ public class FrameTestUtils {
         return toBytes(String.format(frame, destination, contentType, receipt, payload));
     }
 
+    public static byte[] ackFrame(String ackId) {
+        String frame = """
+            ACK
+            id:%s
+
+            \u0000""";
+        return toBytes(String.format(frame, ackId));
+    }
+
     public static byte[] messageFrame(String destination, String messageId, String subscriptionId, String body) {
         String frame = """
             MESSAGE
@@ -81,6 +102,18 @@ public class FrameTestUtils {
             
             %s\u0000""";
         return toBytes(String.format(frame, destination, messageId, subscriptionId, body));
+    }
+
+    public static byte[] messageFrameWithAck(String destination, String messageId, String subscriptionId, String ackId, String body) {
+        String frame = """
+            MESSAGE
+            destination:%s
+            ack:%s
+            messageId:%s
+            subscription:%s
+            
+            %s\u0000""";
+        return toBytes(String.format(frame, destination, ackId, messageId, subscriptionId, body));
     }
 
     public static byte[] disconnectFrame(String receipt) {

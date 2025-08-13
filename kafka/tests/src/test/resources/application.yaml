@@ -8,6 +8,8 @@ reactive-stomp:
   messaging:
     message-endpoint:
       paths: /messageEndpoint
+  stomp:
+    ackPeriod: 1000
 
 kafka:
   bootstrap-servers: localhost:9092

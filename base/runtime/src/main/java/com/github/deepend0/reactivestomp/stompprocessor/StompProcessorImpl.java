@@ -6,6 +6,7 @@ import com.github.deepend0.reactivestomp.stompprocessor.framehandler.*;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.stomp.Command;
 import io.vertx.ext.stomp.Frame;
 import io.vertx.ext.stomp.Frames;
@@ -13,15 +14,13 @@ import io.vertx.ext.stomp.impl.FrameParser;
 import io.vertx.ext.stomp.utils.Headers;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @ApplicationScoped
 public class StompProcessorImpl implements StompProcessor {
@@ -34,6 +33,7 @@ public class StompProcessorImpl implements StompProcessor {
     private final Map<Command, FrameHandler> commandFrameHandlerMap = new HashMap<>();
 
     private final MutinyEmitter<ExternalMessage> serverOutboundEmitter;
+    private EventBus eventBus;
 
     public StompProcessorImpl(FrameParserAdapter frameParserAdapter,
                               StompRegistry stompRegistry,
@@ -47,7 +47,8 @@ public class StompProcessorImpl implements StompProcessor {
                               UnsubscribeFrameHandler unsubscribeFrameHandler,
                               SendFrameHandler sendFrameHandler,
                               AckFrameHandler ackFrameHandler,
-                              NackFrameHandler nackFrameHandler) {
+                              NackFrameHandler nackFrameHandler,
+                              EventBus eventBus) {
         this.frameParserAdapter = frameParserAdapter;
         this.stompRegistry = stompRegistry;
         this.messageIdGenerator = messageIdGenerator;
@@ -60,6 +61,7 @@ public class StompProcessorImpl implements StompProcessor {
         commandFrameHandlerMap.put(Command.ACK, ackFrameHandler);
         commandFrameHandlerMap.put(Command.NACK, nackFrameHandler);
         this.serverOutboundEmitter = serverOutboundEmitter;
+        this.eventBus = eventBus;
     }
 
     @Produces
@@ -101,13 +103,21 @@ public class StompProcessorImpl implements StompProcessor {
     @Override
     @Incoming("brokerOutbound")
     public Uni<Void> processToClient(SendMessage sendMessage) {
-        String subscriptionId = stompRegistry.getSessionSubscriptionByDestination(sendMessage.getSubscriberId(), sendMessage.getDestination()).subscriptionId();
+        StompRegistry.SessionSubscription sessionSubscription = stompRegistry.getSessionSubscriptionByDestination(sendMessage.getSubscriberId(), sendMessage.getDestination());
         Map<String, String> headers = new HashMap<>();
-        headers.put("subscription",subscriptionId);
-        headers.put("messageId", messageIdGenerator.generate());
+        String messageId = messageIdGenerator.generate();
+        headers.put("subscription", sessionSubscription.subscriptionId());
+        headers.put("messageId", messageId);
         headers.put("destination",sendMessage.getDestination());
+        String ackId = null;
+        if(sessionSubscription.isAckRequired()) {
+            ackId = messageId;
+            headers.put("ack", messageId);
+        }
         Frame frame = new Frame(Command.MESSAGE, Headers.create(headers), Buffer.buffer(sendMessage.getPayload()));
-        return serverOutboundEmitter.send(new ExternalMessage(sendMessage.getSubscriberId(), frame.toBuffer().getBytes()));
+        ExternalMessage externalMessage = new ExternalMessage(sendMessage.getSubscriberId(), frame.toBuffer().getBytes());
+        eventBus.publish(StompProcessor.MESSAGE_SEND_DESTINATION, new StompRegistry.SendMessage(sendMessage.getSubscriberId(), sessionSubscription.subscriptionId(), externalMessage, ackId));
+        return serverOutboundEmitter.send(externalMessage);
     }
 
     @ApplicationScoped

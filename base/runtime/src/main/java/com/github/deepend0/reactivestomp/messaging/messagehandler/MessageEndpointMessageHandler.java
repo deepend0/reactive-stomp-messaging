@@ -54,7 +54,12 @@ public class MessageEndpointMessageHandler {
                                             )
                                     );
                         } else {
-                            return Uni.createFrom().voidItem();
+                            return Uni.createFrom().voidItem().onItem().invoke(() -> result
+                                    .subscribe()
+                                    .with(
+                                            ignored -> {},
+                                            error -> LOGGER.error("Processing message endpoint failed", error)
+                                    ));
                         }
 
                 })

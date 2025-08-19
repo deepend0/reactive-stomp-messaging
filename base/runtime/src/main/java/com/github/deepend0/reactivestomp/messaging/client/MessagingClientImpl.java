@@ -1,5 +1,6 @@
 package com.github.deepend0.reactivestomp.messaging.client;
 
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.Serde;
 import com.github.deepend0.reactivestomp.messaging.model.Message;
 import com.github.deepend0.reactivestomp.messaging.model.SendMessage;
 import io.smallrye.mutiny.Uni;
@@ -15,9 +16,16 @@ public class MessagingClientImpl implements MessagingClient {
     @Channel("messagingInbound")
     private MutinyEmitter<Message> messagingInboundEmitter;
 
+    @Inject
+    private Serde serde;
+
     @Override
-    public Uni<Void> send(String destination, byte[] message) {
-        SendMessage sendMessage = new SendMessage("internal", destination, message);
-        return messagingInboundEmitter.send(sendMessage);
+    public Uni<Void> send(String destination, Object message) {
+        try {
+            SendMessage sendMessage = new SendMessage("internal", destination, serde.serialize(message));
+            return messagingInboundEmitter.send(sendMessage);
+        } catch (Exception e) {
+            return Uni.createFrom().failure(new RuntimeException("Failed to serialize message", e));
+        }
     }
 }

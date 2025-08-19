@@ -15,12 +15,14 @@ public class MessageEndpointMethodWrapper<I, O> {
     //TODO Create Uni and Multi wrappers separately
     private final Function<I, Object> methodWrapper;
     private final Class<I> parameterType;
+    private final Boolean wrappedResponse;
 
-    public MessageEndpointMethodWrapper(String inboundDestination, String outboundDestination, Function<I, Object> methodWrapper, Class<I> parameterType) {
+    public MessageEndpointMethodWrapper(String inboundDestination, String outboundDestination, Function<I, Object> methodWrapper, Class<I> parameterType, Boolean wrappedResponse) {
         this.inboundDestination = inboundDestination;
         this.outboundDestination = outboundDestination;
         this.methodWrapper = methodWrapper;
         this.parameterType = parameterType;
+        this.wrappedResponse = wrappedResponse;
     }
 
     public byte[] serialize(Serde serde, O o) throws IOException {
@@ -47,25 +49,46 @@ public class MessageEndpointMethodWrapper<I, O> {
         return parameterType;
     }
 
-    public Multi<byte[]> call(Serde serde, byte [] bytes) {
+    public Uni<MessageEndpointResponse<Multi<byte[]>>> call(Serde serde, byte [] bytes) {
         try {
-            Object result = methodWrapper.apply(deserialize(serde, bytes));
+            Object response = methodWrapper.apply(deserialize(serde, bytes));
 
-            Multi<O> multiResult = switch (result) {
-                case Uni<?> uni -> ((Uni<O>) uni).toMulti();
-                case Multi<?> multi -> (Multi<O>) multi;
-                default -> Multi.createFrom().item((O)result);
-            };
-            return multiResult.onItem().transformToUni(o -> {
-                try {
-                    return Uni.createFrom().item(serialize(serde, o));
-                } catch (IOException ioException) {
-                    return Uni.createFrom().failure(ioException);
+            if(wrappedResponse) {
+                Uni<MessageEndpointResponse<O>> messageEndpointResponseUni;
+                if(response instanceof MessageEndpointResponse messageEndpointResponseResult) {
+                    messageEndpointResponseUni = Uni.createFrom().item(messageEndpointResponseResult);
+                } else {
+                    messageEndpointResponseUni = (Uni<MessageEndpointResponse<O>>) response;
                 }
-            }).merge();
+                return messageEndpointResponseUni.map(messageEndpointResponse -> {
+                    Multi<byte[]> multiByteArrayValue = convertToMultiAndSerialize(messageEndpointResponse.value(), serde);
+                    return new MessageEndpointResponse<>(messageEndpointResponse.outboundDestination(), multiByteArrayValue);
+                });
+            } else {
+                Multi<byte[]> multiByteArrayValue = convertToMultiAndSerialize(response, serde);
+                return Uni.createFrom().item(new MessageEndpointResponse<>(null, multiByteArrayValue));
+            }
         } catch (IOException ioException) {
             LOGGER.error("Error during deserialization.", ioException);
-            return Multi.createFrom().failure(ioException);
+            return Uni.createFrom().failure(ioException);
         }
+    }
+
+    private Multi<byte[]> convertToMultiAndSerialize(Object value, Serde serde) {
+        Multi<byte[]> multiByteArrayValue;
+        Multi<O> multiValue = switch (value) {
+            case Uni<?> uni -> ((Uni<O>) uni).toMulti();
+            case Multi<?> multi -> (Multi<O>) multi;
+            default -> Multi.createFrom().item((O) value);
+        };
+
+        multiByteArrayValue =  multiValue.onItem().transformToUni(o -> {
+            try {
+                return Uni.createFrom().item(serialize(serde, o));
+            } catch (IOException ioException) {
+                return Uni.createFrom().failure(ioException);
+            }
+        }).merge();
+        return multiByteArrayValue;
     }
 }

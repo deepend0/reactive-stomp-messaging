@@ -1,5 +1,6 @@
 package com.github.deepend0.reactivestomp.messaging.messagehandler;
 
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointResponse;
 import com.github.deepend0.reactivestomp.messaging.model.Message;
 import com.github.deepend0.reactivestomp.messaging.model.SendMessage;
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointRegistry;
@@ -32,36 +33,43 @@ public class MessageEndpointMessageHandler {
     @Incoming("messageEndpointInbound")
     public Uni<Void> handle(SendMessage sendMessage) {
         return Uni.join().all(messageEndpointRegistry.getMessageEndpoints(sendMessage.getDestination())
-                .stream().
-                map(messageEndpointMethodWrapper ->
+                .stream()
+                .map(messageEndpointMethodWrapper ->
                     {
-                        Multi<byte[]> result = messageEndpointMethodWrapper.call(serde, sendMessage.getPayload());
+                        Uni<MessageEndpointResponse<Multi<byte[]>>> responseUni = messageEndpointMethodWrapper.call(serde, sendMessage.getPayload());
 
-                        if(messageEndpointMethodWrapper.getOutboundDestination() != null) {
-                            // Fire and forget
-                            return Uni.createFrom().voidItem()
-                                    .onItem().invoke(() -> result
-                                            .map(payload -> new SendMessage(
-                                                    "server",
-                                                    messageEndpointMethodWrapper.getOutboundDestination(),
-                                                    payload))
-                                            .onItem()
-                                            .transformToUni(brokerInboundEmitter::send)
-                                            .merge()
-                                            .subscribe().with(
-                                                    ignored -> {},
-                                                    error -> LOGGER.error("Processing message endpoint failed", error)
-                                            )
-                                    );
-                        } else {
-                            return Uni.createFrom().voidItem().onItem().invoke(() -> result
-                                    .subscribe()
-                                    .with(
-                                            ignored -> {},
-                                            error -> LOGGER.error("Processing message endpoint failed", error)
-                                    ));
-                        }
-
+                        return responseUni.flatMap(response-> {
+                            if (messageEndpointMethodWrapper.getOutboundDestination() != null ||
+                                    response.outboundDestination() != null) {
+                                String outboundDestination = messageEndpointMethodWrapper.getOutboundDestination() != null ?
+                                        messageEndpointMethodWrapper.getOutboundDestination() :
+                                        response.outboundDestination();
+                                // Fire and forget
+                                return Uni.createFrom().voidItem()
+                                        .onItem().invoke(() -> response.value()
+                                                .map(payload -> new SendMessage(
+                                                        "server",
+                                                        outboundDestination,
+                                                        payload))
+                                                .onItem()
+                                                .transformToUni(brokerInboundEmitter::send)
+                                                .merge()
+                                                .subscribe().with(
+                                                        ignored -> {
+                                                        },
+                                                        error -> LOGGER.error("Processing message endpoint failed", error)
+                                                )
+                                        );
+                            } else {
+                                return Uni.createFrom().voidItem().onItem().invoke(() -> response.value()
+                                        .subscribe()
+                                        .with(
+                                                ignored -> {
+                                                },
+                                                error -> LOGGER.error("Processing message endpoint failed", error)
+                                        ));
+                            }
+                        });
                 })
                 .toList())
                 .andFailFast()

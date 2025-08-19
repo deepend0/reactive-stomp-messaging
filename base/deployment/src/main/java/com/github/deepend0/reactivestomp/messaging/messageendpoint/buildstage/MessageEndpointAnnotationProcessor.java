@@ -3,6 +3,7 @@ package com.github.deepend0.reactivestomp.messaging.messageendpoint.buildstage;
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpoint;
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointMethodWrapper;
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointRegistry;
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointResponse;
 import io.quarkus.arc.deployment.GeneratedBeanBuildItem;
 import io.quarkus.arc.deployment.GeneratedBeanGizmoAdaptor;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -270,6 +271,8 @@ public class MessageEndpointAnnotationProcessor {
 
             org.jboss.jandex.Type functionType = ParameterizedType.create(Function.class, endpointMetadata.getMethodInfo().parameters().get(0).type(), returnType);
 
+            Boolean wrappedResponse = endpointMetadata.getMethodInfo().returnType().equals(org.jboss.jandex.Type.create(MessageEndpointResponse.class));
+
             // Build wrapper
             ResultHandle methodWrapper =
                 init.newInstance(
@@ -278,11 +281,13 @@ public class MessageEndpointAnnotationProcessor {
                             String.class,
                             String.class,
                             DescriptorUtils.typeToString(functionType),
-                            Class.class),
+                            Class.class,
+                            Boolean.class),
                     init.load(endpointMetadata.getInboundDestination()),
                     init.load(endpointMetadata.getOutboundDestination()),
                     init.checkCast(wrapper, DescriptorUtils.typeToString(functionType)), // function reference (uses apply)
-                    init.loadClass(inputType));
+                    init.loadClass(inputType),
+                    init.load(wrappedResponse));
 
             // list.add(wrapperBean)
             init.invokeInterfaceMethod(

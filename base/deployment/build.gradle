@@ -1,3 +1,7 @@
+plugins {
+    id "maven-publish"
+}
+
 dependencies {
     implementation platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
     implementation project(":reactive-stomp-base")
@@ -9,4 +13,12 @@ dependencies {
     implementation "io.quarkus:quarkus-websockets-next-deployment"
 
     testImplementation "io.quarkus:quarkus-junit5-internal"
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
 }

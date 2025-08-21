@@ -46,7 +46,8 @@ public class MessageEndpointAnnotationProcessor {
           AnnotationInstance annotationInstance =
               methodInfo.annotations(DotName.createSimple(MessageEndpoint.class.getName())).get(0);
           String inboundDestination = annotationInstance.value("inboundDestination").asString();
-          String outboundDestination = annotationInstance.value("outboundDestination").asString();
+          AnnotationValue outboundDestinationValue = annotationInstance.value("outboundDestination");
+          String outboundDestination = outboundDestinationValue != null ? outboundDestinationValue.asString() : null;
           MessageEndpointMetadata messageEndpointMetadata =
               new MessageEndpointMetadata(
                   inboundDestination, outboundDestination, classInfo, methodInfo);
@@ -271,7 +272,20 @@ public class MessageEndpointAnnotationProcessor {
 
             org.jboss.jandex.Type functionType = ParameterizedType.create(Function.class, endpointMetadata.getMethodInfo().parameters().get(0).type(), returnType);
 
-            Boolean wrappedResponse = endpointMetadata.getMethodInfo().returnType().equals(org.jboss.jandex.Type.create(MessageEndpointResponse.class));
+            org.jboss.jandex.Type messageEndpointResponseType = org.jboss.jandex.Type.create(MessageEndpointResponse.class);
+
+            Boolean wrappedResponse = false;
+            DotName messageEndpointResponseName = DotName.createSimple(MessageEndpointResponse.class.getName());
+            DotName uniName = DotName.createSimple(Uni.class.getName());
+            DotName returnTypeName = returnType.name();
+
+            if (returnTypeName.equals(messageEndpointResponseName)) {
+              wrappedResponse = true;
+            } else if (returnTypeName.equals(uniName)) {
+              ParameterizedType parameterizedType = returnType.asParameterizedType();
+              org.jboss.jandex.Type genericArg = parameterizedType.arguments().getFirst();
+              wrappedResponse = genericArg.name().equals(messageEndpointResponseName);
+            }
 
             // Build wrapper
             ResultHandle methodWrapper =
@@ -284,7 +298,7 @@ public class MessageEndpointAnnotationProcessor {
                             Class.class,
                             Boolean.class),
                     init.load(endpointMetadata.getInboundDestination()),
-                    init.load(endpointMetadata.getOutboundDestination()),
+                    endpointMetadata.getOutboundDestination() == null? init.loadNull() : init.load(endpointMetadata.getOutboundDestination()),
                     init.checkCast(wrapper, DescriptorUtils.typeToString(functionType)), // function reference (uses apply)
                     init.loadClass(inputType),
                     init.load(wrappedResponse));

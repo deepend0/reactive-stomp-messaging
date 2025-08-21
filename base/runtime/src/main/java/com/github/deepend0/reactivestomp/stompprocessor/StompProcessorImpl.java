@@ -25,7 +25,7 @@ import java.util.*;
 @ApplicationScoped
 public class StompProcessorImpl implements StompProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(StompProcessorImpl.class);
-    public static final List<String> ACCEPTED_VERSIONS = List.of("1.0", "1.1", "1.2");
+    public static final List<String> ACCEPTED_VERSIONS = List.of("1.2", "1.1");
     private final FrameParserAdapter frameParserAdapter;
     private final StompRegistry stompRegistry;
     private final MessageIdGenerator messageIdGenerator;

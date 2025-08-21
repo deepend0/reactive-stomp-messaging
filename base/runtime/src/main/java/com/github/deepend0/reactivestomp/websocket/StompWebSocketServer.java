@@ -39,4 +39,10 @@ public class StompWebSocketServer {
         ExternalMessage externalMessage = new ExternalMessage(webSocketConnection.id(), message.getBytes());
         return serverInboundEmitter.send(externalMessage);
     }
+
+    @OnTextMessage
+    Uni<Void> consumeAsync(String message) {
+        ExternalMessage externalMessage = new ExternalMessage(webSocketConnection.id(), message.getBytes());
+        return serverInboundEmitter.send(externalMessage);
+    }
 }

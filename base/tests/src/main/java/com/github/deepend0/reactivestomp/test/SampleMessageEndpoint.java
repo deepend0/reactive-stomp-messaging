@@ -1,6 +1,7 @@
 package com.github.deepend0.reactivestomp.test;
 
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpoint;
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointResponse;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -33,5 +34,15 @@ public class SampleMessageEndpoint {
     @MessageEndpoint(inboundDestination = "/messageEndpoint/obj", outboundDestination = "/topic/obj")
     public Uni<SampleObject> objUni(SampleObject sampleObject) {
         return Uni.createFrom().item(new SampleObject("AA" + sampleObject.getId(), sampleObject.getValue()+1));
+    }
+
+    @MessageEndpoint(inboundDestination = "/messageEndpoint/intValue2")
+    public MessageEndpointResponse<Uni<Integer>> intUniMessageEndpointResponse(Integer value) {
+        return new MessageEndpointResponse<>("/topic/intValue2", Uni.createFrom().item(value + 1));
+    }
+
+    @MessageEndpoint(inboundDestination = "/messageEndpoint/intValue3")
+    public Uni<MessageEndpointResponse<Uni<Integer>>> intUniMessageEndpointResponseUni(Integer value) {
+        return Uni.createFrom().item(new MessageEndpointResponse<>("/topic/intValue3", Uni.createFrom().item(value + 1)));
     }
 }

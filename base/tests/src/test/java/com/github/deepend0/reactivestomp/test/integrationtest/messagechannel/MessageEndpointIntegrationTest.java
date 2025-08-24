@@ -161,33 +161,95 @@ public class MessageEndpointIntegrationTest {
 
     @Test
     public void messageEndpointShouldHandleObjectIncomingMessage() {
-        String session10 = "session10";
-        String session11 = "session11";
-        String session12 = "session12";
+        String session13 = "session13";
+        String session14 = "session14";
+        String session15 = "session15";
 
-        String subscription2 = "sub11";
-        String subscription3 = "sub12";
+        String subscription2 = "sub13";
+        String subscription3 = "sub14";
 
         String sendDestination = "/messageEndpoint/obj";
         String subscribeDestination = "/topic/obj";
 
-        long timer1 = messageChannelITUtils.connectClient(session10);
-        long timer2 = messageChannelITUtils.connectClient(session11);
-        long timer3 = messageChannelITUtils.connectClient(session12);
+        long timer1 = messageChannelITUtils.connectClient(session13);
+        long timer2 = messageChannelITUtils.connectClient(session14);
+        long timer3 = messageChannelITUtils.connectClient(session15);
 
-        messageChannelITUtils.subscribeClient(session11, subscription2, subscribeDestination, "4001");
-        messageChannelITUtils.subscribeClient(session12, subscription3, subscribeDestination, "4002");
+        messageChannelITUtils.subscribeClient(session14, subscription2, subscribeDestination, "5001");
+        messageChannelITUtils.subscribeClient(session15, subscription3, subscribeDestination, "5002");
 
         String message = "{\"id\":\"12345\",\"value\":5}";
         //Regex escape for { and }
         String receivedMessage = "\\{\"id\":\"AA12345\",\"value\":6\\}";
-        CompletableFuture<Void> cf1 = CompletableFuture.runAsync(()-> messageChannelITUtils.sendMessage(session10, sendDestination, message, "4003"));
-        CompletableFuture<Void> cf3 = CompletableFuture.runAsync(()-> messageChannelITUtils.receiveMessage(session11, subscription2, subscribeDestination, receivedMessage));
-        CompletableFuture<Void> cf4 = CompletableFuture.runAsync(()-> messageChannelITUtils.receiveMessage(session12, subscription3, subscribeDestination, receivedMessage));
+        CompletableFuture<Void> cf1 = CompletableFuture.runAsync(()-> messageChannelITUtils.sendMessage(session13, sendDestination, message, "4003"));
+        CompletableFuture<Void> cf3 = CompletableFuture.runAsync(()-> messageChannelITUtils.receiveMessage(session14, subscription2, subscribeDestination, receivedMessage));
+        CompletableFuture<Void> cf4 = CompletableFuture.runAsync(()-> messageChannelITUtils.receiveMessage(session14, subscription3, subscribeDestination, receivedMessage));
         CompletableFuture.allOf(cf1, cf3, cf4).join();
 
-        messageChannelITUtils.disconnectClient(session10, timer1, "4004");
-        messageChannelITUtils.disconnectClient(session11, timer2, "4005");
-        messageChannelITUtils.disconnectClient(session12, timer3, "4006");
+        messageChannelITUtils.disconnectClient(session13, timer1, "5004");
+        messageChannelITUtils.disconnectClient(session14, timer2, "5005");
+        messageChannelITUtils.disconnectClient(session15, timer3, "5006");
+    }
+
+    @Test
+    public void messageEndpointShouldHandleNumberIncomingMessageWithMessageEndpointResponseReturn() {
+        String session16 = "session16";
+        String session17 = "session17";
+        String session18 = "session18";
+
+        String subscription2 = "sub15";
+        String subscription3 = "sub16";
+
+        String sendDestination = "/messageEndpoint/intValue2";
+        String subscribeDestination = "/topic/intValue2";
+
+        long timer1 = messageChannelITUtils.connectClient(session16);
+        long timer2 = messageChannelITUtils.connectClient(session17);
+        long timer3 = messageChannelITUtils.connectClient(session18);
+
+        messageChannelITUtils.subscribeClient(session17, subscription2, subscribeDestination, "6001");
+        messageChannelITUtils.subscribeClient(session18, subscription3, subscribeDestination, "6002");
+
+        String message = "5";
+        String receivedMessage = "6";
+        CompletableFuture<Void> cf1 = CompletableFuture.runAsync(()-> messageChannelITUtils.sendMessage(session16, sendDestination, message, "4003"));
+        CompletableFuture<Void> cf3 = CompletableFuture.runAsync(()-> messageChannelITUtils.receiveMessage(session17, subscription2, subscribeDestination, receivedMessage));
+        CompletableFuture<Void> cf4 = CompletableFuture.runAsync(()-> messageChannelITUtils.receiveMessage(session18, subscription3, subscribeDestination, receivedMessage));
+        CompletableFuture.allOf(cf1, cf3, cf4).join();
+
+        messageChannelITUtils.disconnectClient(session16, timer1, "6004");
+        messageChannelITUtils.disconnectClient(session17, timer2, "6005");
+        messageChannelITUtils.disconnectClient(session18, timer3, "6006");
+    }
+
+    @Test
+    public void messageEndpointShouldHandleNumberIncomingMessageWithUniMessageEndpointResponseReturn() {
+        String session19 = "session19";
+        String session20 = "session20";
+        String session21 = "session21";
+
+        String subscription2 = "sub17";
+        String subscription3 = "sub18";
+
+        String sendDestination = "/messageEndpoint/intValue3";
+        String subscribeDestination = "/topic/intValue3";
+
+        long timer1 = messageChannelITUtils.connectClient(session19);
+        long timer2 = messageChannelITUtils.connectClient(session20);
+        long timer3 = messageChannelITUtils.connectClient(session21);
+
+        messageChannelITUtils.subscribeClient(session20, subscription2, subscribeDestination, "7001");
+        messageChannelITUtils.subscribeClient(session21, subscription3, subscribeDestination, "7002");
+
+        String message = "5";
+        String receivedMessage = "6";
+        CompletableFuture<Void> cf1 = CompletableFuture.runAsync(()-> messageChannelITUtils.sendMessage(session19, sendDestination, message, "4003"));
+        CompletableFuture<Void> cf3 = CompletableFuture.runAsync(()-> messageChannelITUtils.receiveMessage(session20, subscription2, subscribeDestination, receivedMessage));
+        CompletableFuture<Void> cf4 = CompletableFuture.runAsync(()-> messageChannelITUtils.receiveMessage(session21, subscription3, subscribeDestination, receivedMessage));
+        CompletableFuture.allOf(cf1, cf3, cf4).join();
+
+        messageChannelITUtils.disconnectClient(session19, timer1, "7004");
+        messageChannelITUtils.disconnectClient(session20, timer2, "7005");
+        messageChannelITUtils.disconnectClient(session21, timer3, "7006");
     }
 }

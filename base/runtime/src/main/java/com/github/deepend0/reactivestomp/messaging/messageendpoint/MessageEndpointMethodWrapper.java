@@ -49,28 +49,31 @@ public class MessageEndpointMethodWrapper<I, O> {
         return parameterType;
     }
 
-    public Uni<MessageEndpointResponse<Multi<byte[]>>> call(Serde serde, byte [] bytes) {
+    public Multi<MessageEndpointResponse<Multi<byte[]>>> call(Serde serde, byte [] bytes) {
         try {
             Object response = methodWrapper.apply(deserialize(serde, bytes));
 
             if(wrappedResponse) {
-                Uni<MessageEndpointResponse<O>> messageEndpointResponseUni;
+                Multi<MessageEndpointResponse<O>> messageEndpointResponseMulti;
                 if(response instanceof MessageEndpointResponse messageEndpointResponseResult) {
-                    messageEndpointResponseUni = Uni.createFrom().item(messageEndpointResponseResult);
-                } else {
-                    messageEndpointResponseUni = (Uni<MessageEndpointResponse<O>>) response;
+                    messageEndpointResponseMulti = Multi.createFrom().item(messageEndpointResponseResult);
+                } else if(response instanceof Uni) {
+                    messageEndpointResponseMulti = ((Uni<MessageEndpointResponse<O>>) response).toMulti();
                 }
-                return messageEndpointResponseUni.map(messageEndpointResponse -> {
+                else {
+                    messageEndpointResponseMulti = (Multi<MessageEndpointResponse<O>>) response;
+                }
+                return messageEndpointResponseMulti.map(messageEndpointResponse -> {
                     Multi<byte[]> multiByteArrayValue = convertToMultiAndSerialize(messageEndpointResponse.value(), serde);
-                    return new MessageEndpointResponse<>(messageEndpointResponse.outboundDestination(), multiByteArrayValue);
+                    return MessageEndpointResponse.of(messageEndpointResponse.outboundDestination(), multiByteArrayValue);
                 });
             } else {
                 Multi<byte[]> multiByteArrayValue = convertToMultiAndSerialize(response, serde);
-                return Uni.createFrom().item(new MessageEndpointResponse<>(null, multiByteArrayValue));
+                return Multi.createFrom().item(new MessageEndpointResponse<>(null, multiByteArrayValue));
             }
         } catch (IOException ioException) {
             LOGGER.error("Error during deserialization.", ioException);
-            return Uni.createFrom().failure(ioException);
+            return Multi.createFrom().failure(ioException);
         }
     }
 

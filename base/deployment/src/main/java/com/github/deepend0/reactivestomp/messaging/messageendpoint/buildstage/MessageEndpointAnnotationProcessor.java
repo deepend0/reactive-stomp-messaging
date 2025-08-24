@@ -277,11 +277,16 @@ public class MessageEndpointAnnotationProcessor {
             Boolean wrappedResponse = false;
             DotName messageEndpointResponseName = DotName.createSimple(MessageEndpointResponse.class.getName());
             DotName uniName = DotName.createSimple(Uni.class.getName());
+            DotName multiName = DotName.createSimple(Multi.class.getName());
             DotName returnTypeName = returnType.name();
 
             if (returnTypeName.equals(messageEndpointResponseName)) {
               wrappedResponse = true;
             } else if (returnTypeName.equals(uniName)) {
+              ParameterizedType parameterizedType = returnType.asParameterizedType();
+              org.jboss.jandex.Type genericArg = parameterizedType.arguments().getFirst();
+              wrappedResponse = genericArg.name().equals(messageEndpointResponseName);
+            } else if (returnTypeName.equals(multiName)) {
               ParameterizedType parameterizedType = returnType.asParameterizedType();
               org.jboss.jandex.Type genericArg = parameterizedType.arguments().getFirst();
               wrappedResponse = genericArg.name().equals(messageEndpointResponseName);

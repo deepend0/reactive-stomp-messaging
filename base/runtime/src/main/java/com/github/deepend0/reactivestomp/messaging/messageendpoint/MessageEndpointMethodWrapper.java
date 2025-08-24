@@ -6,18 +6,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.function.Function;
+import java.util.Map;
+import java.util.function.BiFunction;
 
 public class MessageEndpointMethodWrapper<I, O> {
     private final Logger LOGGER = LoggerFactory.getLogger(MessageEndpointMethodWrapper.class);
     private final String inboundDestination;
     private final String outboundDestination;
     //TODO Create Uni and Multi wrappers separately
-    private final Function<I, Object> methodWrapper;
+    private final BiFunction<Map<String, String>, I, Object> methodWrapper;
     private final Class<I> parameterType;
     private final Boolean wrappedResponse;
 
-    public MessageEndpointMethodWrapper(String inboundDestination, String outboundDestination, Function<I, Object> methodWrapper, Class<I> parameterType, Boolean wrappedResponse) {
+    public MessageEndpointMethodWrapper(String inboundDestination,
+                                        String outboundDestination,
+                                        BiFunction<Map<String, String>,I, Object> methodWrapper,
+                                        Class<I> parameterType,
+                                        Boolean wrappedResponse) {
         this.inboundDestination = inboundDestination;
         this.outboundDestination = outboundDestination;
         this.methodWrapper = methodWrapper;
@@ -41,7 +46,7 @@ public class MessageEndpointMethodWrapper<I, O> {
         return outboundDestination;
     }
 
-    public Function<I, Object> getMethodWrapper() {
+    public BiFunction<Map<String, String>,I, Object> getMethodWrapper() {
         return methodWrapper;
     }
 
@@ -49,9 +54,9 @@ public class MessageEndpointMethodWrapper<I, O> {
         return parameterType;
     }
 
-    public Multi<MessageEndpointResponse<Multi<byte[]>>> call(Serde serde, byte [] bytes) {
+    public Multi<MessageEndpointResponse<Multi<byte[]>>> call(Serde serde, Map<String, String> inboundPathParams, byte [] bytes) {
         try {
-            Object response = methodWrapper.apply(deserialize(serde, bytes));
+            Object response = methodWrapper.apply(inboundPathParams, deserialize(serde, bytes));
 
             if(wrappedResponse) {
                 Multi<MessageEndpointResponse<O>> messageEndpointResponseMulti;

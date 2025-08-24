@@ -1,10 +1,11 @@
 package com.github.deepend0.reactivestomp.messaging.messagehandler;
 
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointMethodWrapper;
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointRegistry;
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointResponse;
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.Serde;
 import com.github.deepend0.reactivestomp.messaging.model.Message;
 import com.github.deepend0.reactivestomp.messaging.model.SendMessage;
-import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointRegistry;
-import com.github.deepend0.reactivestomp.messaging.messageendpoint.Serde;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.MutinyEmitter;
@@ -13,6 +14,8 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 @ApplicationScoped
 public class MessageEndpointMessageHandler {
@@ -34,10 +37,12 @@ public class MessageEndpointMessageHandler {
     public Uni<Void> handle(SendMessage sendMessage) {
         // Fire and forget
         return Uni.createFrom().voidItem().onItem().invoke(()->
-                Multi.createFrom().iterable(messageEndpointRegistry.getMessageEndpoints(sendMessage.getDestination()))
-                .flatMap(messageEndpointMethodWrapper ->
+                Multi.createFrom().item(messageEndpointRegistry.getMessageEndpoints(sendMessage.getDestination()))
+                .flatMap(matchResult ->
                     {
-                        Multi<MessageEndpointResponse<Multi<byte[]>>> responseMulti = messageEndpointMethodWrapper.call(serde, sendMessage.getPayload());
+                        MessageEndpointMethodWrapper<?, ?> messageEndpointMethodWrapper = matchResult.getHandler();
+                        Map<String, String> inboundPathParams = matchResult.getParams();
+                        Multi<MessageEndpointResponse<Multi<byte[]>>> responseMulti = messageEndpointMethodWrapper.call(serde, inboundPathParams, sendMessage.getPayload());
 
                         return responseMulti
                             .onFailure().invoke(t -> LOGGER.error("Endpoint call failed", t))

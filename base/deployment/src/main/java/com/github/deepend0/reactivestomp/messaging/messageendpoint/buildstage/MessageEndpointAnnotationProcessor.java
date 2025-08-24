@@ -1,29 +1,26 @@
 package com.github.deepend0.reactivestomp.messaging.messageendpoint.buildstage;
 
-import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpoint;
-import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointMethodWrapper;
-import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointRegistry;
-import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointResponse;
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.*;
 import io.quarkus.arc.deployment.GeneratedBeanBuildItem;
 import io.quarkus.arc.deployment.GeneratedBeanGizmoAdaptor;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
-import io.quarkus.gizmo.*;
 import io.quarkus.gizmo.Type;
+import io.quarkus.gizmo.*;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.jboss.jandex.*;
+import org.objectweb.asm.Opcodes;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-
-import org.jboss.jandex.*;
-import org.objectweb.asm.Opcodes;
+import java.util.function.BiFunction;
 
 
 //TODOs
@@ -85,20 +82,21 @@ public class MessageEndpointAnnotationProcessor {
         methodReturnType = Type.classType(methodReturnTypeJandex.name());
       }
 
-      Type.ParameterizedType functionType =
+      Type.ParameterizedType bifunctionType =
           Type.parameterizedType(
-              Type.classType(Function.class),
+              Type.classType(BiFunction.class),
+              Type.classType(Map.class),
               inputType,
               methodReturnType);
 
       SignatureBuilder signatureBuilder = SignatureBuilder.forClass()
-          .addInterface(functionType);
+          .addInterface(bifunctionType);
       try (ClassCreator classCreator =
           ClassCreator.builder()
               .classOutput(classOutput)
               .className(getWrapperClassName(className, methodInfo.name()))
               .superClass(Object.class)
-              .interfaces(Function.class)
+              .interfaces(BiFunction.class)
               .signature(signatureBuilder.build())
               .build()) {
 
@@ -135,28 +133,59 @@ public class MessageEndpointAnnotationProcessor {
         }
 
         // Apply method
-        if (methodParams.size() == 1) {
-          String paramType = methodParams.get(0).type().name().toString();
 
-          try (MethodCreator applyObject =
-                       classCreator.getMethodCreator("apply", Object.class, Object.class)) {
-            applyObject.setModifiers(Opcodes.ACC_PUBLIC);
-            ResultHandle instance = applyObject.readInstanceField(fieldDescriptor, applyObject.getThis());
-            ResultHandle param = applyObject.getMethodParam(0);
+        try (MethodCreator applyMethod =
+                     classCreator.getMethodCreator("apply", Object.class, Object.class, Object.class)) {
+          applyMethod.setModifiers(Opcodes.ACC_PUBLIC);
+          ResultHandle instance = applyMethod.readInstanceField(fieldDescriptor, applyMethod.getThis());
+          ResultHandle paramMap = applyMethod.getMethodParam(0); // Map<String, String>
+          ResultHandle paramInput = applyMethod.getMethodParam(1); // Payload input
 
-            // Cast input to the expected type
-            ResultHandle castedInput = applyObject.checkCast(param, methodParams.getFirst().type().name().toString());
+          // Build argument array for method call
+          List<ResultHandle> args = new ArrayList<>();
 
-            // Call the original apply method
-            ResultHandle result =
-                    applyObject.invokeVirtualMethod(
-                            MethodDescriptor.ofMethod(classInfo.name().toString(), methodInfo.name(), methodReturnTypeJandex.name().toString(), paramType),
-                            instance,
-                            castedInput);
+          for (MethodParameterInfo paramInfo : methodParams) {
+            String paramTypeName = paramInfo.type().name().toString();
+            String paramName = paramInfo.name();
+            if (paramInfo.hasAnnotation(DotName.createSimple(PathParam.class.getName()))) {
+              // Lookup value from map
 
-            // Cast result to Object
-            applyObject.returnValue(applyObject.checkCast(result, methodReturnTypeJandex.name().toString()));
+              ResultHandle rawValue = applyMethod.invokeInterfaceMethod(
+                      MethodDescriptor.ofMethod(Map.class, "get", Object.class, Object.class),
+                      paramMap,
+                      applyMethod.load(paramName)
+              );
+
+              // Cast String to target type
+              ResultHandle castedValue = castStringToType(applyMethod, rawValue, paramTypeName);
+              args.add(castedValue);
+
+            } else if (paramInfo.hasAnnotation(DotName.createSimple(Payload.class.getName()))) {
+              // Use paramInput → cast to expected type
+              ResultHandle castedPayload = applyMethod.checkCast(paramInput, paramTypeName);
+              args.add(castedPayload);
+
+            } else {
+              ResultHandle castedPayload = applyMethod.checkCast(paramInput, paramTypeName);
+              args.add(castedPayload);
+            }
           }
+
+          // Call the original method with assembled args
+          ResultHandle result =
+                  applyMethod.invokeVirtualMethod(
+                          MethodDescriptor.ofMethod(
+                                  classInfo.name().toString(),
+                                  methodInfo.name(),
+                                  methodReturnTypeJandex.name().toString(),
+                                  methodParams.stream().map(p -> p.type().name().toString()).toArray(String[]::new)
+                          ),
+                          instance,
+                          args.toArray(new ResultHandle[args.size()])
+                  );
+
+          // Cast result to Object
+          applyMethod.returnValue(applyMethod.checkCast(result, methodReturnTypeJandex.name().toString()));
         }
       }
     }
@@ -214,21 +243,12 @@ public class MessageEndpointAnnotationProcessor {
         }
       }
 
-      Type registryType =
-          Type.parameterizedType(
-              Type.classType(Map.class),
-              Type.classType(String.class),
-              Type.parameterizedType(
-                  Type.classType(List.class),
-                  Type.parameterizedType(
-                      Type.classType(MessageEndpointMethodWrapper.class),
-                      Type.wildcardTypeUnbounded(),
-                      Type.wildcardTypeUnbounded())));
+      Type registryType = Type.classType(PathHandlerRouter.class);
 
       // Registry field
       FieldDescriptor registryField =
           classCreator
-              .getFieldCreator("registry", Map.class)
+              .getFieldCreator("registry", PathHandlerRouter.class)
               .setSignature(SignatureBuilder.forField().setType(registryType).build())
               .setModifiers(Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL)
               .getFieldDescriptor();
@@ -236,8 +256,8 @@ public class MessageEndpointAnnotationProcessor {
       // Constructor
       try (MethodCreator constructorCreator = classCreator.getConstructorCreator(new String[]{})) {
         constructorCreator.invokeSpecialMethod(MethodDescriptor.ofConstructor(Object.class), constructorCreator.getThis());
-        ResultHandle newMap = constructorCreator.newInstance(MethodDescriptor.ofConstructor(HashMap.class));
-        constructorCreator.writeInstanceField(registryField, constructorCreator.getThis(), newMap);
+        ResultHandle newPathHandlerRouter = constructorCreator.newInstance(MethodDescriptor.ofConstructor(PathHandlerRouter.class));
+        constructorCreator.writeInstanceField(registryField, constructorCreator.getThis(), newPathHandlerRouter);
         constructorCreator.returnValue(null);
       }
 
@@ -246,13 +266,11 @@ public class MessageEndpointAnnotationProcessor {
       try (MethodCreator init = classCreator.getMethodCreator("init", void.class)) {
 
         init.addAnnotation(PostConstruct.class);
-        ResultHandle mapRef = init.readInstanceField(registryField, init.getThis());
+        ResultHandle registryRef = init.readInstanceField(registryField, init.getThis());
 
         for (Map.Entry<String, List<MessageEndpointMetadata>> entry : groupedMetadata.entrySet()) {
           String inbound = entry.getKey();
           List<MessageEndpointMetadata> endpointMetadataList = entry.getValue();
-
-          ResultHandle list = init.newInstance(MethodDescriptor.ofConstructor(ArrayList.class));
 
           for (MessageEndpointMetadata endpointMetadata : endpointMetadataList) {
             String fieldClass = getWrapperClassName(endpointMetadata.getClassInfo().name().toString('_'),
@@ -268,11 +286,16 @@ public class MessageEndpointAnnotationProcessor {
             // Load class for input parameter type
             String inputType = endpointMetadata.getMethodInfo().parameters().get(0).type().name().toString();
 
+            org.jboss.jandex.Type mapType = org.jboss.jandex.Type.create(Map.class);
             org.jboss.jandex.Type returnType = endpointMetadata.getMethodInfo().returnType();
-
-            org.jboss.jandex.Type functionType = ParameterizedType.create(Function.class, endpointMetadata.getMethodInfo().parameters().get(0).type(), returnType);
-
-            org.jboss.jandex.Type messageEndpointResponseType = org.jboss.jandex.Type.create(MessageEndpointResponse.class);
+            org.jboss.jandex.Type payloadType = endpointMetadata.getMethodInfo().parameters()
+                    .stream()
+                    .filter(methodParameterInfo -> methodParameterInfo.hasAnnotation(Payload.class))
+                    .findFirst()
+                    .orElse(endpointMetadata.getMethodInfo().parameters()
+                            .stream()
+                            .filter(methodParameterInfo -> !methodParameterInfo.hasAnnotation(PathParam.class)).findFirst().get()).type();
+            org.jboss.jandex.Type bifunctionType = ParameterizedType.create(BiFunction.class, mapType, payloadType, returnType);
 
             Boolean wrappedResponse = false;
             DotName messageEndpointResponseName = DotName.createSimple(MessageEndpointResponse.class.getName());
@@ -299,28 +322,22 @@ public class MessageEndpointAnnotationProcessor {
                             MessageEndpointMethodWrapper.class,
                             String.class,
                             String.class,
-                            DescriptorUtils.typeToString(functionType),
+                            DescriptorUtils.typeToString(bifunctionType),
                             Class.class,
                             Boolean.class),
                     init.load(endpointMetadata.getInboundDestination()),
                     endpointMetadata.getOutboundDestination() == null? init.loadNull() : init.load(endpointMetadata.getOutboundDestination()),
-                    init.checkCast(wrapper, DescriptorUtils.typeToString(functionType)), // function reference (uses apply)
+                    init.checkCast(wrapper, DescriptorUtils.typeToString(bifunctionType)), // function reference (uses apply)
                     init.loadClass(inputType),
                     init.load(wrappedResponse));
 
-            // list.add(wrapperBean)
-            init.invokeInterfaceMethod(
-                MethodDescriptor.ofMethod(List.class, "add", boolean.class, Object.class),
-                list,
+            // registry.addPath
+            init.invokeVirtualMethod(
+                MethodDescriptor.ofMethod(PathHandlerRouter.class, "addPath", void.class, String.class, Object.class),
+                registryRef,
+                init.load(inbound),
                 methodWrapper);
           }
-
-          // map.put(destination, list)
-          init.invokeInterfaceMethod(
-              MethodDescriptor.ofMethod(Map.class, "put", Object.class, Object.class, Object.class),
-              mapRef,
-              init.load(inbound),
-              list);
         }
 
         init.returnValue(null);
@@ -332,19 +349,17 @@ public class MessageEndpointAnnotationProcessor {
               MethodDescriptor.ofMethod(
                   REGISTRY_CLASS_NAME,
                   "getMessageEndpoints",
-                  List.class.getName(),
+                  PathHandlerRouter.MatchResult.class.getName(),
                   String.class.getName()))) {
         ResultHandle destination = method.getMethodParam(0);
-        ResultHandle mapRef = method.readInstanceField(registryField, method.getThis());
+        ResultHandle registryRef = method.readInstanceField(registryField, method.getThis());
 
         ResultHandle result =
-            method.invokeInterfaceMethod(
+            method.invokeVirtualMethod(
                 MethodDescriptor.ofMethod(
-                    Map.class, "getOrDefault", Object.class, Object.class, Object.class),
-                mapRef,
-                destination,
-                method.invokeStaticMethod(
-                    MethodDescriptor.ofMethod("java.util.Collections", "emptyList", List.class)));
+                    PathHandlerRouter.class, "matchPath", PathHandlerRouter.MatchResult.class, String.class),
+                    registryRef,
+                destination);
 
         method.returnValue(result);
       }
@@ -361,5 +376,45 @@ public class MessageEndpointAnnotationProcessor {
 
   private static String getWrapperFieldName(String className, String methodName) {
     return buildFieldNameFromClassName(className + "_" + methodName + "Wrapper");
+  }
+  private ResultHandle castStringToType(MethodCreator mc, ResultHandle raw, String targetType) {
+    switch (targetType) {
+      case "int":
+      case "java.lang.Integer":
+        return mc.invokeStaticMethod(
+                MethodDescriptor.ofMethod(Integer.class, "valueOf", Integer.class, String.class),
+                raw
+        );
+      case "long":
+      case "java.lang.Long":
+        return mc.invokeStaticMethod(
+                MethodDescriptor.ofMethod(Long.class, "valueOf", Long.class, String.class),
+                raw
+        );
+      case "boolean":
+      case "java.lang.Boolean":
+        return mc.invokeStaticMethod(
+                MethodDescriptor.ofMethod(Boolean.class, "valueOf", Boolean.class, String.class),
+                raw
+        );
+      case "double":
+      case "java.lang.Double":
+        return mc.invokeStaticMethod(
+                MethodDescriptor.ofMethod(Double.class, "valueOf", Double.class, String.class),
+                raw
+        );
+      case "float":
+      case "java.lang.Float":
+        return mc.invokeStaticMethod(
+                MethodDescriptor.ofMethod(Float.class, "valueOf", Float.class, String.class),
+                raw
+        );
+      case "java.lang.String":
+        return mc.checkCast(raw, String.class);
+
+      default:
+        // fallback: attempt cast (user-defined types)
+        return mc.checkCast(raw, targetType);
+    }
   }
 }

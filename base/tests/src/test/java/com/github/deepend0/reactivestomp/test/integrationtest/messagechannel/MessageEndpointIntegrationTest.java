@@ -10,7 +10,6 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
 
@@ -251,5 +250,77 @@ public class MessageEndpointIntegrationTest {
         messageChannelITUtils.disconnectClient(session19, timer1, "7004");
         messageChannelITUtils.disconnectClient(session20, timer2, "7005");
         messageChannelITUtils.disconnectClient(session21, timer3, "7006");
+    }
+
+    @Test
+    public void uniMessageEndpointWithPathParamAnnotatedShouldHandleIncomingMessage() {
+        String session1 = "session22";
+        String session2 = "session23";
+
+        String subscription2 = "sub19";
+
+        String sendDestination = "/messageEndpoint/john/helloAsync2";
+        String subscribeDestination = "/topic/helloAsync2";
+
+        long timer1 = messageChannelITUtils.connectClient(session1);
+        long timer2 = messageChannelITUtils.connectClient(session2);
+
+        messageChannelITUtils.subscribeClient(session2, subscription2, subscribeDestination, "8002");
+
+        String receivedMessage = "\"Hello World from john\"";
+        CompletableFuture<Void> cf1 = CompletableFuture.runAsync(()-> messageChannelITUtils.sendMessage(session1, sendDestination, "\"World\"", "8004"));
+        CompletableFuture<Void> cf3 = CompletableFuture.runAsync(()-> messageChannelITUtils.receiveMessage(session2, subscription2, subscribeDestination, receivedMessage));
+        CompletableFuture.allOf(cf1, cf3).join();
+
+        messageChannelITUtils.disconnectClient(session1, timer1, "8005");
+        messageChannelITUtils.disconnectClient(session2, timer2, "8006");
+    }
+
+    @Test
+    public void uniMessageEndpointWithPathParamShouldWithoutPayloadAnnotationHandleIncomingMessage() {
+        String session1 = "session24";
+        String session2 = "session25";
+
+        String subscription2 = "sub20";
+
+        String sendDestination = "/messageEndpoint/sam/helloAsync3";
+        String subscribeDestination = "/topic/helloAsync3";
+
+        long timer1 = messageChannelITUtils.connectClient(session1);
+        long timer2 = messageChannelITUtils.connectClient(session2);
+
+        messageChannelITUtils.subscribeClient(session2, subscription2, subscribeDestination, "9002");
+
+        String receivedMessage = "\"Hello again World from sam\"";
+        CompletableFuture<Void> cf1 = CompletableFuture.runAsync(()-> messageChannelITUtils.sendMessage(session1, sendDestination, "\"World\"", "8004"));
+        CompletableFuture<Void> cf3 = CompletableFuture.runAsync(()-> messageChannelITUtils.receiveMessage(session2, subscription2, subscribeDestination, receivedMessage));
+        CompletableFuture.allOf(cf1, cf3).join();
+
+        messageChannelITUtils.disconnectClient(session1, timer1, "9005");
+        messageChannelITUtils.disconnectClient(session2, timer2, "9006");
+    }
+
+    @Test
+    public void uniMessageEndpointWithMultiplePathParamsShouldHandleIncomingMessage() {
+        String session1 = "session26";
+        String session2 = "session27";
+
+        String subscription2 = "sub21";
+
+        String sendDestination = "/messageEndpoint/mike/helloAsync4/7";
+        String subscribeDestination = "/topic/helloAsync4";
+
+        long timer1 = messageChannelITUtils.connectClient(session1);
+        long timer2 = messageChannelITUtils.connectClient(session2);
+
+        messageChannelITUtils.subscribeClient(session2, subscription2, subscribeDestination, "10002");
+
+        String receivedMessage = "\"Hello World from mike 7 times\"";
+        CompletableFuture<Void> cf1 = CompletableFuture.runAsync(()-> messageChannelITUtils.sendMessage(session1, sendDestination, "\"World\"", "8004"));
+        CompletableFuture<Void> cf3 = CompletableFuture.runAsync(()-> messageChannelITUtils.receiveMessage(session2, subscription2, subscribeDestination, receivedMessage));
+        CompletableFuture.allOf(cf1, cf3).join();
+
+        messageChannelITUtils.disconnectClient(session1, timer1, "10005");
+        messageChannelITUtils.disconnectClient(session2, timer2, "10006");
     }
 }

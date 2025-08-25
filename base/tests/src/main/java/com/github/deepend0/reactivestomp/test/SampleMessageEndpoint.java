@@ -53,12 +53,17 @@ public class SampleMessageEndpoint {
     }
 
     @MessageEndpoint(inboundDestination = "/messageEndpoint/{user}/helloAsync3", outboundDestination = "/topic/helloAsync3")
-    public Uni<String> greetingUniWithPathParamAndWithoutPayloadAnnotation(@PathParam String user, String name) {
+    public Uni<String> greetingUniWithIncomingPathParamAndWithoutPayloadAnnotation(@PathParam String user, String name) {
         return Uni.createFrom().item("Hello again " + name + " from " + user);
     }
 
     @MessageEndpoint(inboundDestination = "/messageEndpoint/{user}/helloAsync4/{times}", outboundDestination = "/topic/helloAsync4")
-    public Uni<String> greetingUniWithMultiPathParam(@PathParam String user, @PathParam Integer times, @Payload String name) {
+    public Uni<String> greetingUniWithMultiIncomingPathParam(@PathParam String user, @PathParam Integer times, @Payload String name) {
         return Uni.createFrom().item("Hello " + name + " from " + user + " " + times + " times");
+    }
+
+    @MessageEndpoint(inboundDestination = "/messageEndpoint/{user}/helloAsync5", outboundDestination = "/topic/{user}/helloAsync5/{name}")
+    public Uni<String> greetingUniWithIncomingAndOutgoingPathParam(@PathParam String user, @Payload String name) {
+        return Uni.createFrom().item("Hello outgoing " + name + " from " + user);
     }
 }

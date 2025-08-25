@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -15,18 +16,21 @@ public class MessageEndpointMethodWrapper<I, O> {
     private final String outboundDestination;
     //TODO Create Uni and Multi wrappers separately
     private final BiFunction<Map<String, String>, I, Object> methodWrapper;
-    private final Class<I> parameterType;
+    private final Class<I> payloadParameterType;
+    private final String payloadParameterName;
     private final Boolean wrappedResponse;
 
     public MessageEndpointMethodWrapper(String inboundDestination,
                                         String outboundDestination,
                                         BiFunction<Map<String, String>,I, Object> methodWrapper,
-                                        Class<I> parameterType,
+                                        Class<I> payloadParameterType,
+                                        String payloadParameterName,
                                         Boolean wrappedResponse) {
         this.inboundDestination = inboundDestination;
         this.outboundDestination = outboundDestination;
         this.methodWrapper = methodWrapper;
-        this.parameterType = parameterType;
+        this.payloadParameterType = payloadParameterType;
+        this.payloadParameterName = payloadParameterName;
         this.wrappedResponse = wrappedResponse;
     }
 
@@ -35,7 +39,7 @@ public class MessageEndpointMethodWrapper<I, O> {
     }
 
     public I deserialize(Serde serde, byte[] bytes)  throws IOException {
-        return serde.deserialize(bytes, parameterType);
+        return serde.deserialize(bytes, payloadParameterType);
     }
 
     public String getInboundDestination() {
@@ -50,8 +54,16 @@ public class MessageEndpointMethodWrapper<I, O> {
         return methodWrapper;
     }
 
-    public Class<I> getParameterType() {
-        return parameterType;
+    public Class<I> getPayloadParameterType() {
+        return payloadParameterType;
+    }
+
+    public String getPayloadParameterName() {
+        return payloadParameterName;
+    }
+
+    public Boolean isWrappedResponse() {
+        return wrappedResponse;
     }
 
     public Multi<MessageEndpointResponse<Multi<byte[]>>> call(Serde serde, Map<String, String> inboundPathParams, byte [] bytes) {
@@ -80,6 +92,29 @@ public class MessageEndpointMethodWrapper<I, O> {
             LOGGER.error("Error during deserialization.", ioException);
             return Multi.createFrom().failure(ioException);
         }
+    }
+
+    public String evaluateOutboundPath(String pathTemplate, Serde serde, Map<String, String> inboundPathParams, byte [] bytes) throws IOException {
+        Map<String, String> params = new HashMap<>(inboundPathParams);
+        params.put(payloadParameterName,
+                serde.deserialize(bytes, payloadParameterType).toString());
+        String[] segments = pathTemplate.split("/");
+        StringBuilder result = new StringBuilder();
+
+        for (String seg : segments) {
+            if (seg.isEmpty()) continue;
+            if (seg.startsWith("{") && seg.endsWith("}")) {
+                String paramName = seg.substring(1, seg.length() - 1);
+                String paramValue = params.get(paramName);
+                if (paramValue == null) {
+                    throw new IllegalArgumentException("Missing parameter: " + paramName);
+                }
+                result.append("/").append(paramValue);
+            } else {
+                result.append("/").append(seg);
+            }
+        }
+        return result.length() > 0 ? result.toString() : "/";
     }
 
     private Multi<byte[]> convertToMultiAndSerialize(Object value, Serde serde) {

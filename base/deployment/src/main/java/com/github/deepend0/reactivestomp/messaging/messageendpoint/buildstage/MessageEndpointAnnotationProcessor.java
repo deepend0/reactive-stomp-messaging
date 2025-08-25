@@ -284,7 +284,9 @@ public class MessageEndpointAnnotationProcessor {
                     FieldDescriptor.of(REGISTRY_CLASS_NAME, fieldName, fieldClass), init.getThis());
 
             // Load class for input parameter type
-            String inputType = endpointMetadata.getMethodInfo().parameters().get(0).type().name().toString();
+            MethodParameterInfo payloadParameterInfo = endpointMetadata.getMethodInfo().parameters().stream().filter(p -> !p.hasAnnotation(DotName.createSimple(PathParam.class.getName()))).findFirst().get();
+            String inputType = payloadParameterInfo.type().name().toString();
+            String inputName = payloadParameterInfo.name();
 
             org.jboss.jandex.Type mapType = org.jboss.jandex.Type.create(Map.class);
             org.jboss.jandex.Type returnType = endpointMetadata.getMethodInfo().returnType();
@@ -324,11 +326,13 @@ public class MessageEndpointAnnotationProcessor {
                             String.class,
                             DescriptorUtils.typeToString(bifunctionType),
                             Class.class,
+                            String.class,
                             Boolean.class),
                     init.load(endpointMetadata.getInboundDestination()),
                     endpointMetadata.getOutboundDestination() == null? init.loadNull() : init.load(endpointMetadata.getOutboundDestination()),
                     init.checkCast(wrapper, DescriptorUtils.typeToString(bifunctionType)), // function reference (uses apply)
                     init.loadClass(inputType),
+                    init.load(inputName),
                     init.load(wrappedResponse));
 
             // registry.addPath

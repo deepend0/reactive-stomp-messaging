@@ -3,6 +3,7 @@ package com.github.deepend0.reactivestomp.messaging.messagehandler;
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointMethodWrapper;
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointRegistry;
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointResponse;
+import com.github.deepend0.reactivestomp.messaging.messageendpoint.PathHandlerRouter;
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.Serde;
 import com.github.deepend0.reactivestomp.messaging.model.Message;
 import com.github.deepend0.reactivestomp.messaging.model.SendMessage;
@@ -15,6 +16,8 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 @ApplicationScoped
@@ -53,14 +56,20 @@ public class MessageEndpointMessageHandler {
 
                                 Multi<byte []> payloads = response.value();
                                 if (outboundDestination != null) {
-                                    return payloads
-                                            .map(payload -> new SendMessage(
-                                                    "server",
-                                                    outboundDestination,
-                                                    payload))
-                                            .onItem()
-                                            .transformToUni(brokerInboundEmitter::send)
-                                            .merge();
+                                    try{
+                                        String outboundPath = messageEndpointMethodWrapper.evaluateOutboundPath(outboundDestination, serde, inboundPathParams, sendMessage.getPayload());
+                                        return payloads
+                                                .map(payload -> new SendMessage(
+                                                        "server",
+                                                        outboundPath,
+                                                        payload))
+                                                .onItem()
+                                                .transformToUni(brokerInboundEmitter::send)
+                                                .merge();
+                                    } catch (IOException e) {
+                                        LOGGER.error("Failed to evaluate outbound path", e);
+                                        return Multi.createFrom().failure(e);
+                                    }
                                 } else {
                                     return payloads;
                                 }

@@ -316,11 +316,35 @@ public class MessageEndpointIntegrationTest {
         messageChannelITUtils.subscribeClient(session2, subscription2, subscribeDestination, "10002");
 
         String receivedMessage = "\"Hello World from mike 7 times\"";
-        CompletableFuture<Void> cf1 = CompletableFuture.runAsync(()-> messageChannelITUtils.sendMessage(session1, sendDestination, "\"World\"", "8004"));
+        CompletableFuture<Void> cf1 = CompletableFuture.runAsync(()-> messageChannelITUtils.sendMessage(session1, sendDestination, "\"World\"", "10004"));
         CompletableFuture<Void> cf3 = CompletableFuture.runAsync(()-> messageChannelITUtils.receiveMessage(session2, subscription2, subscribeDestination, receivedMessage));
         CompletableFuture.allOf(cf1, cf3).join();
 
         messageChannelITUtils.disconnectClient(session1, timer1, "10005");
         messageChannelITUtils.disconnectClient(session2, timer2, "10006");
+    }
+
+    @Test
+    public void uniMessageEndpointWithIncomingAndOutgoingPathParamsShouldHandleIncomingMessage() {
+        String session1 = "session28";
+        String session2 = "session29";
+
+        String subscription2 = "sub22";
+
+        String sendDestination = "/messageEndpoint/fred/helloAsync5";
+        String subscribeDestination = "/topic/fred/helloAsync5/World";
+
+        long timer1 = messageChannelITUtils.connectClient(session1);
+        long timer2 = messageChannelITUtils.connectClient(session2);
+
+        messageChannelITUtils.subscribeClient(session2, subscription2, subscribeDestination, "11002");
+
+        String receivedMessage = "\"Hello outgoing World from fred\"";
+        CompletableFuture<Void> cf1 = CompletableFuture.runAsync(()-> messageChannelITUtils.sendMessage(session1, sendDestination, "\"World\"", "11004"));
+        CompletableFuture<Void> cf3 = CompletableFuture.runAsync(()-> messageChannelITUtils.receiveMessage(session2, subscription2, subscribeDestination, receivedMessage));
+        CompletableFuture.allOf(cf1, cf3).join();
+
+        messageChannelITUtils.disconnectClient(session1, timer1, "11005");
+        messageChannelITUtils.disconnectClient(session2, timer2, "11006");
     }
 }

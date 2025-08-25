@@ -4,7 +4,6 @@ import io.quarkus.websockets.next.*;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import io.vertx.core.buffer.Buffer;
-import jakarta.enterprise.context.SessionScoped;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 
 @WebSocket(path = "/ws/stomp")

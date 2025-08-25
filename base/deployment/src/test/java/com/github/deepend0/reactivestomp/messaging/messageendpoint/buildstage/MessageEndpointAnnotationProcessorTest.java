@@ -37,7 +37,7 @@ public class MessageEndpointAnnotationProcessorTest {
         Assertions.assertNotNull(messageEndpointMethodWrapper);
         Assertions.assertEquals("e1inboundDestination1", messageEndpointMethodWrapper.getInboundDestination());
         Assertions.assertEquals("e1outboundDestination1", messageEndpointMethodWrapper.getOutboundDestination());
-        Assertions.assertEquals(String.class, messageEndpointMethodWrapper.getParameterType());
+        Assertions.assertEquals(String.class, messageEndpointMethodWrapper.getPayloadParameterType());
         List<String> result = new ArrayList<>();
         Uni<String> uniResult = (Uni<String>) messageEndpointMethodWrapper.getMethodWrapper().apply(new HashMap<>(), "World");
         uniResult.subscribe().with(result::add);
@@ -48,7 +48,7 @@ public class MessageEndpointAnnotationProcessorTest {
         Assertions.assertNotNull(messageEndpointMethodWrapper2);
         Assertions.assertEquals("e2inboundDestination2", messageEndpointMethodWrapper2.getInboundDestination());
         Assertions.assertEquals("e2outboundDestination2", messageEndpointMethodWrapper2.getOutboundDestination());
-        Assertions.assertEquals(String.class, messageEndpointMethodWrapper2.getParameterType());
+        Assertions.assertEquals(String.class, messageEndpointMethodWrapper2.getPayloadParameterType());
         List<String> result2 = new ArrayList<>();
         Uni<String> uniResult2 = (Uni<String>) messageEndpointMethodWrapper2.getMethodWrapper().apply(new HashMap<>(), "World");
         uniResult2.subscribe().with(result2::add);
@@ -99,7 +99,7 @@ public class MessageEndpointAnnotationProcessorTest {
         Assertions.assertNotNull(messageEndpointMethodWrapper);
         Assertions.assertEquals("e2/inboundDestination7/{user}/send", messageEndpointMethodWrapper.getInboundDestination());
         Assertions.assertEquals("e2outboundDestination7", messageEndpointMethodWrapper.getOutboundDestination());
-        Assertions.assertEquals(String.class, messageEndpointMethodWrapper.getParameterType());
+        Assertions.assertEquals(String.class, messageEndpointMethodWrapper.getPayloadParameterType());
         List<String> result = new ArrayList<>();
         Uni<String> uniResult = (Uni<String>) messageEndpointMethodWrapper.getMethodWrapper().apply(params, "World");
         uniResult.subscribe().with(result::add);
@@ -117,7 +117,7 @@ public class MessageEndpointAnnotationProcessorTest {
         Assertions.assertNotNull(messageEndpointMethodWrapper);
         Assertions.assertEquals("e2/inboundDestination8/{user}/send/{times}", messageEndpointMethodWrapper.getInboundDestination());
         Assertions.assertEquals("e2outboundDestination8", messageEndpointMethodWrapper.getOutboundDestination());
-        Assertions.assertEquals(String.class, messageEndpointMethodWrapper.getParameterType());
+        Assertions.assertEquals(String.class, messageEndpointMethodWrapper.getPayloadParameterType());
         List<String> result = new ArrayList<>();
         Uni<String> uniResult = (Uni<String>) messageEndpointMethodWrapper.getMethodWrapper().apply(params, "World");
         uniResult.subscribe().with(result::add);
@@ -131,7 +131,7 @@ public class MessageEndpointAnnotationProcessorTest {
         Assertions.assertNotNull(messageEndpointMethodWrapper);
         Assertions.assertEquals("e2inboundDestination9", messageEndpointMethodWrapper.getInboundDestination());
         Assertions.assertEquals("e2outboundDestination9", messageEndpointMethodWrapper.getOutboundDestination());
-        Assertions.assertEquals(SampleMessageEndpointTwo.UserDto.class, messageEndpointMethodWrapper.getParameterType());
+        Assertions.assertEquals(SampleMessageEndpointTwo.UserDto.class, messageEndpointMethodWrapper.getPayloadParameterType());
         List<SampleMessageEndpointTwo.ResultDto> result = new ArrayList<>();
         Uni<SampleMessageEndpointTwo.ResultDto> uniResult = (Uni<SampleMessageEndpointTwo.ResultDto>) messageEndpointMethodWrapper.getMethodWrapper().apply(new HashMap<>(), new SampleMessageEndpointTwo.UserDto("World"));
         uniResult.subscribe().with(result::add);

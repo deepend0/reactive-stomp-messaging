@@ -6,8 +6,10 @@ quarkus:
 
 reactive-stomp:
   messaging:
+    broker:
+      regex: .*
     message-endpoint:
-      paths: /messageEndpoint
+      regex: /messageEndpoint.*
   stomp:
     ackPeriod: 1000
 

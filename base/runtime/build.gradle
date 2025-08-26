@@ -15,7 +15,7 @@ dependencies {
 }
 
 quarkusExtension {
-    deploymentModule "reactive-stomp-base-deployment"
+    deploymentModule "reactive-stomp-ws-base-deployment"
 }
 
 publishing {

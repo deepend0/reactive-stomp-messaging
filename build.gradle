@@ -2,7 +2,7 @@ subprojects {
     apply plugin: "java-library"
 
     group "com.github.deepend0"
-    version "1.0-SNAPSHOT"
+    version "1.0.0"
 
     repositories {
         mavenLocal()

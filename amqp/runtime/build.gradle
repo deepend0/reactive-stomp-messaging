@@ -5,14 +5,14 @@ plugins {
 
 dependencies {
     implementation platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
-    implementation project(":reactive-stomp-base")
+    implementation project(":reactive-stomp-ws-base")
     implementation "io.quarkus:quarkus-arc"
     implementation "io.quarkus:quarkus-core"
     implementation "io.vertx:vertx-amqp-client:${vertxVersion}"
 }
 
 quarkusExtension {
-    deploymentModule "reactive-stomp-amqp-deployment"
+    deploymentModule "reactive-stomp-ws-amqp-deployment"
 }
 
 publishing {

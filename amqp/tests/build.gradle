@@ -4,7 +4,7 @@ plugins {
 
 dependencies {
     implementation platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
-    implementation project(":reactive-stomp-amqp")
+    implementation project(":reactive-stomp-ws-amqp")
     implementation "io.quarkus:quarkus-config-yaml"
     implementation "io.quarkus:quarkus-arc"
     implementation "io.quarkus:quarkus-core"
@@ -12,7 +12,7 @@ dependencies {
     implementation "io.quarkus:quarkus-websockets-next"
     implementation "io.vertx:vertx-stomp:${vertxVersion}"
 
-    testImplementation project(":reactive-stomp-base-tests")
+    testImplementation project(":reactive-stomp-ws-base-tests")
     testImplementation "io.quarkus:quarkus-junit5-mockito"
     testImplementation "org.awaitility:awaitility:4.3.0"
 }

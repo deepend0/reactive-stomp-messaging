@@ -16,10 +16,11 @@ import io.vertx.mutiny.core.eventbus.EventBus;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
 public class ConnectFrameHandler extends FrameHandler {

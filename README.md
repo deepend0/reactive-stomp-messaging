@@ -6,24 +6,29 @@ The STOMP server provides direct broker interface as well as messaging endpoints
 
 ## Motivation
 STOMP (Simple Text Oriented Messaging Protocol) is useful in light-weight protocol for messaging with brokers (see [STOMP specification](https://stomp.github.io/stomp-specification-1.2.html)). 
-It is convenient for client-side applications having relatively light messaging requirements like web front-end applications dealing with user interactions.
+It is also convenient for client-side applications having relatively light messaging requirements like web front-end applications dealing with user interactions.
 However, instead of directly connecting to a messaging broker from client-side, having a server-side mediator service would be more useful to add server-side logic like security, data integrity and custom logic.
 
 Another point is that STOMP messaging between a client and server, here via WebSockets, inherently provides routing in messaging. 
 When multiple types of messages are sent over the same socket connection, messages are easily multiplexed with different destinations.
 
-Also, though STOMP messaging over Websockets exists in some other frameworks than Quarkus, full reactive implementation and usage was not available.
-This project aims to fill this gap.
+Although STOMP messaging over Websockets exists in some other frameworks such as Spring, a full reactive implementation was missing.
+This project aims to fill this gap as a Quarkus extension.
 
 ## Features
 
+### STOMP Processor
+The extension has STOMP server capability. It supports heartbeats, acks but not transactions.
+
+### Simple In-Memory Broker
+
+Messages sent to particular inbound destinations are handled by internal message broker.
+`reactive-stomp-ws-base` package contains a simple message broker working on a FIFO queue with round-robin fashion.
+
 ### Relay Message Broker
 
-Messages sent to particular inbound destinations are relayed towards a message broker.
-Allowed destinations can be configured via `reactive-stomp.messaging.broker.regex` config parameter.
-
-`reactive-stomp-ws-base` package has a simple in-memory broker, whereas `reactive-stomp-ws-kafka` and `reactive-stomp-ws-amqp` packages support Kafka and AMQP message brokers respectively.
-
+Messages sent to particular inbound destinations are relayed towards an external message broker.
+`reactive-stomp-ws-kafka` and `reactive-stomp-ws-amqp` packages support Kafka and AMQP message brokers respectively.
 
 ### Message Endpoints
 
@@ -101,6 +106,40 @@ public class SampleMessageEndpoints {
         return Uni.createFrom().item("Hello outgoing " + name + " from " + user);
     }
 }
+```
+## Configuration
+Base extension can be configured via configuration properties file. Here is an example configuration:
+
+```
+reactive-stomp:
+  heartbeat: 1000, 1000 #Stomp heartbeat receive and reply period
+  messaging:
+    broker:
+      regex: .* #Regex pattern for destinations to be handled directly by broker
+    message-endpoint:
+      regex: /messageEndpoint.* #Regex pattern for destinations to be handled by message endpoints
+  stomp:
+    ackPeriod: 1000 #Stomp ack receiving period
+```
+
+Example configuration for Kafka module:
+
+```
+kafka:
+  bootstrap-servers: localhost:9092 #Kafka bootstrap servers
+  producer:
+    ...                     #Producer properties
+  consumer:
+    ...                     #Consumer properties
+```
+
+Example configuration for AMQP module:
+```
+amqp:
+  host: localhost
+  port: 5672
+  username: user
+  password: pass
 ```
 
 ## Example

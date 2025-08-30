@@ -3,7 +3,6 @@ package com.github.deepend0.reactivestomp.messaging.messagehandler;
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointMethodWrapper;
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointRegistry;
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.MessageEndpointResponse;
-import com.github.deepend0.reactivestomp.messaging.messageendpoint.PathHandlerRouter;
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.Serde;
 import com.github.deepend0.reactivestomp.messaging.model.Message;
 import com.github.deepend0.reactivestomp.messaging.model.SendMessage;
@@ -17,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 @ApplicationScoped

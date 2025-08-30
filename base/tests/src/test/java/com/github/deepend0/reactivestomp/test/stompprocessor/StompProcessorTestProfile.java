@@ -4,8 +4,8 @@ import com.github.deepend0.reactivestomp.messaging.messagehandler.BrokerMessageH
 import com.github.deepend0.reactivestomp.messaging.messagehandler.MessageEndpointMessageHandler;
 import com.github.deepend0.reactivestomp.messaging.messagehandler.MessagingMessageHandler;
 import com.github.deepend0.reactivestomp.test.integrationtest.messagechannel.MessageChannelTestConfig;
-import com.github.deepend0.reactivestomp.websocket.StompWebSocketServer;
 import com.github.deepend0.reactivestomp.websocket.ConnectionRegistry;
+import com.github.deepend0.reactivestomp.websocket.StompWebSocketServer;
 import io.quarkus.test.junit.QuarkusTestProfile;
 
 import java.util.Map;

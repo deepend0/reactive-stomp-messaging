@@ -1,8 +1,8 @@
 package com.github.deepend0.reactivestomp.test.integrationtest.websocket;
 
+import com.github.deepend0.reactivestomp.test.FrameTestUtils;
 import com.github.deepend0.reactivestomp.test.HeartbeatManager;
 import com.github.deepend0.reactivestomp.test.StompWebSocketClient;
-import com.github.deepend0.reactivestomp.test.FrameTestUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.websockets.next.WebSocketClientConnection;
@@ -10,6 +10,12 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.stomp.impl.FrameParser;
 import jakarta.inject.Inject;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Deque;
@@ -17,11 +23,6 @@ import java.util.LinkedList;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @QuarkusTest
 @TestProfile(WebSocketTestProfile.class)

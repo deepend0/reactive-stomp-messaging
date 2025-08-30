@@ -9,9 +9,9 @@ import io.vertx.ext.stomp.impl.FrameParser;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.eclipse.microprofile.reactive.messaging.Channel;
-import jakarta.inject.Inject;
 
 import java.util.Arrays;
 import java.util.Deque;

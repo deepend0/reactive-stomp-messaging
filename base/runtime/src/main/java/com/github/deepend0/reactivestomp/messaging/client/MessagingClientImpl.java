@@ -3,8 +3,6 @@ package com.github.deepend0.reactivestomp.messaging.client;
 import com.github.deepend0.reactivestomp.messaging.messageendpoint.Serde;
 import com.github.deepend0.reactivestomp.messaging.model.Message;
 import com.github.deepend0.reactivestomp.messaging.model.SendMessage;
-import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.subscription.Cancellable;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

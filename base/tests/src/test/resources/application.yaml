@@ -5,6 +5,7 @@ quarkus:
     enabled: false
 
 reactive-stomp:
+  heartbeat: 1000, 1000
   messaging:
     broker:
       regex: .*

@@ -1,8 +1,9 @@
 package com.github.deepend0.reactivestomp.test.integrationtest.messagechannel;
 
-import com.github.deepend0.reactivestomp.websocket.StompWebSocketServer;
 import com.github.deepend0.reactivestomp.websocket.ConnectionRegistry;
+import com.github.deepend0.reactivestomp.websocket.StompWebSocketServer;
 import io.quarkus.test.junit.QuarkusTestProfile;
+
 import java.util.Map;
 
 public class MessageChannelTestProfile implements QuarkusTestProfile {

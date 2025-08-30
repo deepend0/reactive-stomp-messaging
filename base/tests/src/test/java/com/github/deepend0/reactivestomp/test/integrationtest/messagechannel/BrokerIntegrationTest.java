@@ -5,12 +5,11 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import jakarta.inject.Inject;
-
-import java.util.concurrent.CompletableFuture;
-
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.CompletableFuture;
 
 @QuarkusTest
 @TestProfile(MessageChannelTestProfile.class)
